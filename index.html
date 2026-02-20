@@ -13,22 +13,37 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Crimson+Pro:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root { --navy: #0a0e1a; --deep: #0d1426; --card: #111827; --border: #1e2d4a; --gold: #c9a84c; --gold-light: #f0c96e; --teal: #1abc9c; --text: #e8dcc8; --muted: #8a9bb5; --white: #f5f0e8; }
+        :root {
+            --navy: #0a0e1a; --deep: #0d1426; --card: #111827; --border: #1e2d4a;
+            --gold: #c9a84c; --gold-light: #f0c96e; --teal: #1abc9c; --text: #e8dcc8;
+            --muted: #8a9bb5; --white: #f5f0e8;
+        }
         body { background: var(--navy); color: var(--text); font-family: 'Crimson Pro', serif; min-height: 100vh; margin: 0; }
         .app { max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
         .header { background: linear-gradient(180deg, #0a0e1a 0%, #0d1426 100%); border-bottom: 2px solid var(--gold); padding: 20px; position: sticky; top: 0; z-index: 100; text-align: center; }
         .logo { font-family: 'Pirata One', cursive; font-size: 28px; color: var(--gold); }
         .logo span { color: var(--teal); }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px; }
-        .input { width: 100%; background: var(--deep); border: 1px solid var(--border); border-radius: 8px; color: var(--white); padding: 12px; margin-bottom: 12px; font-size: 16px; outline: none; }
-        .btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-family: 'Space Mono', monospace; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .input, .select { width: 100%; background: var(--deep); border: 1px solid var(--border); border-radius: 8px; color: var(--white); padding: 12px; margin-bottom: 12px; font-size: 16px; outline: none; }
+        .input:focus, .select:focus { border-color: var(--gold); }
+        .btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-family: 'Space Mono', monospace; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 8px; }
         .btn-gold { background: var(--gold); color: var(--navy); }
-        .btn-gold:hover { background: var(--gold-light); }
+        .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .nav { display: flex; background: var(--deep); border-top: 1px solid var(--border); position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: var(--muted); font-size: 12px; font-family: 'Space Mono', monospace; }
+        .nav-item.active { color: var(--gold); border-top: 2px solid var(--gold); background: rgba(201, 168, 76, 0.05); }
         .standing-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
         .rank { font-family: 'Pirata One', cursive; font-size: 20px; color: var(--gold); width: 24px; }
+        .team-info { flex: 1; }
+        .team-name { font-weight: 700; color: var(--white); }
         .pts { font-family: 'Space Mono', monospace; color: var(--teal); font-weight: 700; }
+        .leaders-preview { display: flex; gap: 8px; margin-top: 4px; }
+        .leader-tag { font-size: 10px; background: var(--deep); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--muted); }
         .alert { padding: 12px; border-radius: 8px; margin-bottom: 16px; text-align: center; font-size: 14px; }
         .alert-error { background: rgba(192,57,43,0.2); border: 1px solid rgba(192,57,43,0.4); color: #ff7675; }
+        .alert-success { background: rgba(26,188,156,0.2); border: 1px solid rgba(26,188,156,0.4); color: var(--teal); }
+        .hidden-leaders { font-style: italic; color: var(--muted); font-size: 12px; }
     </style>
 </head>
 <body>
@@ -44,93 +59,201 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const auth = firebase.auth();
-
         const { useState, useEffect } = React;
 
+        const LEADERS = [
+            "Monkey.D.Luffy (ST01)", "Roronoa Zoro (OP01)", "Trafalgar Law (OP01)", "Eustass.Kid (OP01)",
+            "Kaido (OP01)", "Crocodile (OP01)", "Edward.Newgate (OP02)", "Smoker (OP02)", "Kin'emon (OP02)",
+            "Portgas.D.Ace (OP03)", "Charlotte Katakuri (OP03)", "Rob Lucci (OP03)", "Arlong (OP03)",
+            "Rebecca (OP04)", "Donquixote Doflamingo (OP04)", "Issho (OP04)", "Monkey.D.Luffy (OP05)",
+            "Enel (OP05)", "Sabo (OP05)", "Sakazuki (OP05)", "Yamato (OP06)", "Gecko Moria (OP06)",
+            "Vinsmoke Reiju (OP06)", "Perona (OP06)", "Boa Hancock (OP07)", "Jewelry Bonney (OP07)",
+            "Monkey.D.Dragon (OP07)", "Rob Lucci (OP07)", "Marco (OP08)", "Silvers Rayleigh (OP08)",
+            "King (OP08)", "Pudding (OP08)"
+        ].sort();
+
         function App() {
-            const [user, setUser] = useState(null);
+            const [view, setView] = useState('standings');
+            const [userTeam, setUserTeam] = useState(null);
             const [teams, setTeams] = useState([]);
-            const [loading, setLoading] = useState(true);
+            const [config, setConfig] = useState({ tournamentStarted: false });
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
 
             useEffect(() => {
-                const unsubAuth = auth.onAuthStateChanged(u => setUser(u));
                 const unsubTeams = db.collection('teams').onSnapshot(snap => {
-                    setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                    setLoading(false);
+                    setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => (b.pts || 0) - (a.pts || 0)));
                 });
-                return () => { unsubAuth(); unsubTeams(); };
+                const unsubConfig = db.collection('config').doc('status').onSnapshot(doc => {
+                    if (doc.exists) setConfig(doc.data());
+                });
+                
+                const saved = localStorage.getItem('tournament_team');
+                if (saved) setUserTeam(JSON.parse(saved));
+
+                return () => { unsubTeams(); unsubConfig(); };
             }, []);
 
-            if (loading) return <div style={{padding:40, textAlign:'center', color:'var(--gold)'}}>Carregando Navio...</div>;
+            const handleRegister = async (e) => {
+                e.preventDefault();
+                setError(''); setSuccess('');
+                const data = new FormData(e.target);
+                const teamName = data.get('teamName').trim();
+                const p1 = data.get('p1').trim();
+                const l1 = data.get('l1');
+                const p2 = data.get('p2').trim();
+                const l2 = data.get('l2');
+                const password = data.get('password');
 
-            return (
-                <div className="app">
-                    <div className="header">
-                        <div className="logo">2on<span>2</span> Tournament</div>
-                    </div>
-                    {user ? (
-                        <div className="card">
-                            <h2 style={{fontFamily:'Pirata One', color:'var(--gold)'}}>Olá, Capitão!</h2>
-                            <p style={{margin:'10px 0', fontSize:'14px', color:'var(--muted)'}}>Logado como: {user.email}</p>
-                            <button className="btn btn-gold" onClick={() => auth.signOut()}>Sair</button>
-                        </div>
-                    ) : (
-                        <div className="card">
-                            <h3 style={{fontFamily:'Pirata One', marginBottom:15}}>Acessar Torneio</h3>
-                            <Login />
-                        </div>
-                    )}
-                    <div className="card">
-                        <h3 style={{fontFamily:'Pirata One', marginBottom:15, color:'var(--teal)'}}>Standings Realtime</h3>
-                        <Standings teams={teams} />
-                    </div>
-                </div>
-            );
-        }
+                if (!teamName || !p1 || !p2 || !password) return setError('Preencha todos os campos.');
+                
+                try {
+                    const existing = await db.collection('teams').doc(teamName).get();
+                    if (existing.exists) return setError('Nome da dupla já existe.');
 
-        function Login() {
-            const [email, setEmail] = useState('');
-            const [pass, setPass] = useState('');
-            const [err, setErr] = useState('');
+                    const newTeam = { teamName, p1, l1, p2, l2, password, pts: 0, w: 0, l: 0, d: 0, registeredAt: new Date() };
+                    await db.collection('teams').doc(teamName).set(newTeam);
+                    setUserTeam(newTeam);
+                    localStorage.setItem('tournament_team', JSON.stringify(newTeam));
+                    setSuccess('Registro concluído com sucesso!');
+                    setView('user');
+                } catch (err) { setError('Erro ao registrar: ' + err.message); }
+            };
 
-            const handleLogin = async () => {
-                setErr('');
-                try { await auth.signInWithEmailAndPassword(email, pass); }
-                catch (e) { setErr('Email ou senha incorretos.'); }
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setError(''); setSuccess('');
+                const data = new FormData(e.target);
+                const teamName = data.get('teamName').trim();
+                const password = data.get('password');
+
+                try {
+                    const doc = await db.collection('teams').doc(teamName).get();
+                    if (doc.exists && doc.data().password === password) {
+                        const team = { id: doc.id, ...doc.data() };
+                        setUserTeam(team);
+                        localStorage.setItem('tournament_team', JSON.stringify(team));
+                        setSuccess('Login realizado!');
+                        setView('user');
+                    } else { setError('Nome ou senha incorretos.'); }
+                } catch (err) { setError('Erro ao logar.'); }
+            };
+
+            const toggleTournament = async () => {
+                const newState = !config.tournamentStarted;
+                await db.collection('config').doc('status').set({ tournamentStarted: newState });
             };
 
             return (
-                <div>
-                    {err && <div className="alert alert-error">{err}</div>}
-                    <input className="input" placeholder="Email" type="email" onChange={e => setEmail(e.target.value)} />
-                    <input className="input" type="password" placeholder="Senha" onChange={e => setPass(e.target.value)} />
-                    <button className="btn btn-gold" onClick={handleLogin}>Entrar</button>
-                </div>
-            );
-        }
+                <div className="app">
+                    <header className="header">
+                        <h1 className="logo">TCG <span>2on2</span></h1>
+                    </header>
 
-        function Standings({ teams }) {
-            const sorted = [...teams].sort((a,b) => (b.points || 0) - (a.points || 0));
-            if (sorted.length === 0) return <p style={{textAlign:'center', opacity:0.5}}>Aguardando início...</p>;
-            
-            return (
-                <div>
-                    {sorted.map((t, i) => (
-                        <div key={t.id} className="standing-row">
-                            <span className="rank">{i+1}º</span>
-                            <div style={{flex:1}}>
-                                <div style={{fontWeight:700, color:'var(--white)'}}>{t.name || 'Dupla'}</div>
-                                <div style={{fontSize:10, color:'var(--muted)'}}>{t.player1} & {t.player2}</div>
-                            </div>
-                            <span className="pts">{t.points || 0} pts</span>
+                    {error && <div className="alert alert-error">{error}</div>}
+                    {success && <div className="alert alert-success">{success}</div>}
+
+                    {view === 'standings' && (
+                        <div className="card">
+                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Classificação</h2>
+                            {teams.map((t, i) => (
+                                <div key={t.id} className="standing-row">
+                                    <div className="rank">#{i + 1}</div>
+                                    <div className="team-info">
+                                        <div className="team-name">{t.teamName}</div>
+                                        {config.tournamentStarted ? (
+                                            <div className="leaders-preview">
+                                                <span className="leader-tag">{t.l1}</span>
+                                                <span className="leader-tag">{t.l2}</span>
+                                            </div>
+                                        ) : <div className="hidden-leaders">Líderes ocultos até o início</div>}
+                                    </div>
+                                    <div className="pts">{t.pts || 0} PTS</div>
+                                </div>
+                            ))}
+                            {teams.length === 0 && <p style={{textAlign: 'center', color: 'var(--muted)'}}>Nenhuma dupla inscrita.</p>}
                         </div>
-                    ))}
+                    )}
+
+                    {view === 'register' && (
+                        <div className="card">
+                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Cadastro da Dupla</h2>
+                            <form onSubmit={handleRegister}>
+                                <input name="teamName" className="input" placeholder="Nome da Dupla" required />
+                                <div style={{display: 'flex', gap: '8px'}}>
+                                    <input name="p1" className="input" placeholder="Jogador 1" required />
+                                    <select name="l1" className="select">{LEADERS.map(l => <option key={l} value={l}>{l}</option>)}</select>
+                                </div>
+                                <div style={{display: 'flex', gap: '8px'}}>
+                                    <input name="p2" className="input" placeholder="Jogador 2" required />
+                                    <select name="l2" className="select">{LEADERS.map(l => <option key={l} value={l}>{l}</option>)}</select>
+                                </div>
+                                <input name="password" type="password" className="input" placeholder="Senha da Conta" required />
+                                <button type="submit" className="btn btn-gold">Criar Dupla</button>
+                            </form>
+                            <p style={{marginTop: '16px', textAlign: 'center', fontSize: '14px'}}>Já tem uma conta? <span onClick={() => setView('login')} style={{color: 'var(--gold)', cursor: 'pointer'}}>Entrar</span></p>
+                        </div>
+                    )}
+
+                    {view === 'login' && (
+                        <div className="card">
+                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Acessar Torneio</h2>
+                            <form onSubmit={handleLogin}>
+                                <input name="teamName" className="input" placeholder="Nome da Dupla" required />
+                                <input name="password" type="password" className="input" placeholder="Senha" required />
+                                <button type="submit" className="btn btn-gold">Entrar</button>
+                            </form>
+                            <p style={{marginTop: '16px', textAlign: 'center', fontSize: '14px'}}>Não tem cadastro? <span onClick={() => setView('register')} style={{color: 'var(--gold)', cursor: 'pointer'}}>Registrar</span></p>
+                        </div>
+                    )}
+
+                    {view === 'user' && userTeam && (
+                        <div className="card">
+                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)'}}>{userTeam.teamName}</h2>
+                            <p style={{color: 'var(--muted)', marginBottom: '16px'}}>Painel do Jogador</p>
+                            <div className="standing-row">
+                                <div className="team-info">
+                                    <div className="team-name">{userTeam.p1}</div>
+                                    <div className="leader-tag">{userTeam.l1}</div>
+                                </div>
+                                <div className="pts" style={{color: 'var(--muted)'}}>VS</div>
+                                <div className="team-info" style={{textAlign: 'right'}}>
+                                    <div className="team-name">{userTeam.p2}</div>
+                                    <div className="leader-tag">{userTeam.l2}</div>
+                                </div>
+                            </div>
+                            <div style={{marginTop: '20px', display: 'flex', justifyContent: 'space-between'}}>
+                                <div><span style={{color: 'var(--muted)'}}>Pontos:</span> <span className="pts">{userTeam.pts || 0}</span></div>
+                                <button onClick={() => {localStorage.removeItem('tournament_team'); setUserTeam(null); setView('login');}} className="btn btn-outline" style={{padding: '8px 12px', width: 'auto'}}>Sair</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'admin' && (
+                        <div className="card">
+                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Painel de Admin</h2>
+                            <button onClick={toggleTournament} className="btn btn-gold">
+                                {config.tournamentStarted ? 'Parar Torneio (Ocultar Líderes)' : 'Iniciar Torneio (Revelar Líderes)'}
+                            </button>
+                            <p style={{marginTop: '12px', fontSize: '12px', color: 'var(--muted)'}}>Admin local por enquanto.</p>
+                        </div>
+                    )}
+
+                    <nav className="nav">
+                        <div className={`nav-item ${view === 'standings' ? 'active' : ''}`} onClick={() => setView('standings')}>STANDINGS</div>
+                        {!userTeam ? (
+                            <div className={`nav-item ${view === 'login' || view === 'register' ? 'active' : ''}`} onClick={() => setView('login')}>CONTA</div>
+                        ) : (
+                            <div className={`nav-item ${view === 'user' ? 'active' : ''}`} onClick={() => setView('user')}>MEU TIME</div>
+                        )}
+                        <div className={`nav-item ${view === 'admin' ? 'active' : ''}`} onClick={() => setView('admin')}>ADMIN</div>
+                    </nav>
                 </div>
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
