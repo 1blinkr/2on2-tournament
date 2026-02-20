@@ -77,6 +77,7 @@
             const [userTeam, setUserTeam] = useState(null);
             const [teams, setTeams] = useState([]);
             const [config, setConfig] = useState({ tournamentStarted: false });
+            const [isAdmin, setIsAdmin] = useState(false);
             const [error, setError] = useState('');
             const [success, setSuccess] = useState('');
 
@@ -137,6 +138,18 @@
                         setView('user');
                     } else { setError('Nome ou senha incorretos.'); }
                 } catch (err) { setError('Erro ao logar.'); }
+            };
+
+            const handleAdminLogin = (e) => {
+                e.preventDefault();
+                setError('');
+                const pass = new FormData(e.target).get('adminPass');
+                if (pass === 'Betinho') {
+                    setIsAdmin(true);
+                    setSuccess('Acesso admin concedido.');
+                } else {
+                    setError('Senha incorreta.');
+                }
             };
 
             const toggleTournament = async () => {
@@ -232,10 +245,19 @@
                     {view === 'admin' && (
                         <div className="card">
                             <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Painel de Admin</h2>
-                            <button onClick={toggleTournament} className="btn btn-gold">
-                                {config.tournamentStarted ? 'Parar Torneio (Ocultar Líderes)' : 'Iniciar Torneio (Revelar Líderes)'}
-                            </button>
-                            <p style={{marginTop: '12px', fontSize: '12px', color: 'var(--muted)'}}>Admin local por enquanto.</p>
+                            {!isAdmin ? (
+                                <form onSubmit={handleAdminLogin}>
+                                    <input name="adminPass" type="password" className="input" placeholder="Senha Admin" required />
+                                    <button type="submit" className="btn btn-gold">Entrar</button>
+                                </form>
+                            ) : (
+                                <div>
+                                    <button onClick={toggleTournament} className="btn btn-gold">
+                                        {config.tournamentStarted ? 'Parar Torneio (Ocultar Líderes)' : 'Iniciar Torneio (Revelar Líderes)'}
+                                    </button>
+                                    <p style={{marginTop: '12px', fontSize: '12px', color: 'var(--muted)'}}>Logado como admin.</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
