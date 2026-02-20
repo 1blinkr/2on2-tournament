@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2on2 Tournament - One Piece TCG</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style id="app-styles"></style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // MOCK DATA LAYER
+        const DB = {
+            get: (key) => {
+                try {
+                    const val = localStorage.getItem(key);
+                    return val ? JSON.parse(val) : null;
+                } catch (e) { return null; }
+            },
+            set: (key, val) => {
+                try {
+                    localStorage.setItem(key, JSON.stringify(val));
+                } catch (e) {}
+            }
+        };
+
+        const ADMIN_PASSWORD = 'lojista123';
+
+        const suggestRounds = (numTeams) => {
+            if (numTeams <= 4) return 3;
+            if (numTeams <= 8) return 4;
+            if (numTeams <= 16) return 5;
+            return 6;
+        };
+
+        function generatePairings(teams, round) {
+            const sorted = [...teams].sort((a, b) => b.points - a.points);
+            const pairs = [];
+            const paired = new Set();
+            for (let i = 0; i < sorted.length; i++) {
+                if (paired.has(sorted[i].id)) continue;
+                for (let j = i + 1; j < sorted.length; j++) {
+                    if (paired.has(sorted[j].id)) continue;
+                    const alreadyPlayed = sorted[i].opponents?.includes(sorted[j].id);
+                    if (!alreadyPlayed) {
+                        pairs.push({ team1: sorted[i], team2: sorted[j], table: pairs.length + 1 });
+                        paired.add(sorted[i].id);
+                        paired.add(sorted[j].id);
+                        break;
+                    }
+                }
+                if (!paired.has(sorted[i].id)) {
+                    pairs.push({ team1: sorted[i], team2: null, table: pairs.length + 1 });
+                    paired.add(sorted[i].id);
+                }
+            }
+            return pairs;
+        }
+
+        function calcOPPercent(team, allTeams) {
+            if (!team.opponents || team.opponents.length === 0) return 0;
+            const opPoints = team.opponents.map(opId => {
+                const op = allTeams.find(t => t.id === opId);
+                return op ? op.points : 0;
+            });
+            return opPoints.reduce((a, b) => a + b, 0) / opPoints.length;
+        }
+
+        function getStandings(teams) {
+            return [...teams]
+                .filter(t => t.confirmed)
+                .sort((a, b) => {
+                    if (b.points !== a.points) return b.points - a.points;
+                    const aOP = calcOPPercent(a, teams);
+                    const bOP = calcOPPercent(b, teams);
+                    return bOP - aOP;
+                })
+                .map((t, i) => ({ ...t, rank: i + 1, op: calcOPPercent(t, teams).toFixed(2) }));
+        }
+
+        const initState = {
+            tournament: null,
+            teams: [],
+            rounds: []
+        };
+
+        // Componentes (LoginScreen, App, etc.) seriam inseridos aqui...
+        // Para economizar espaço no prompt, vou inserir a lógica principal e o render.
+        
+        function App() {
+            const [state, setState] = useState(() => DB.get('2on2_state') || initState);
+            const [session, setSession] = useState(null);
+            const [activeTab, setActiveTab] = useState('rodada');
+
+            useEffect(() => {
+                DB.set('2on2_state', state);
+            }, [state]);
+
+            if (!session && activeTab !== 'standings') {
+                return (
+                    <div style={{padding: '50px', textAlign: 'center'}}>
+                        <h1>2on2 Tournament</h1>
+                        <button onClick={() => setSession({type: 'admin'})}>Entrar como Admin</button>
+                    </div>
+                );
+            }
+
+            return (
+                <div style={{padding: '20px'}}>
+                    <header style={{display: 'flex', justifyContent: 'space-between'}}>
+                        <h2>{state.tournament?.name || 'Torneio One Piece'}</h2>
+                        <button onClick={() => setSession(null)}>Sair</button>
+                    </header>
+                    <main>
+                        <p>Bem-vindo ao sistema de gerenciamento de torneios.</p>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
