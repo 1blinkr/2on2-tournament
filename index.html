@@ -7,36 +7,76 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style id="app-styles"></style>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Crimson+Pro:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root { --navy: #0a0e1a; --deep: #0d1426; --card: #111827; --border: #1e2d4a; --gold: #c9a84c; --gold-light: #f0c96e; --red: #c0392b; --red-light: #e74c3c; --teal: #1abc9c; --teal-dark: #16a085; --text: #e8dcc8; --muted: #8a9bb5; --white: #f5f0e8; }
+      body { background: var(--navy); color: var(--text); font-family: 'Crimson Pro', serif; min-height: 100vh; background-image: radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.04) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(26,188,156,0.04) 0%, transparent 50%), repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(255,255,255,0.01) 60px, rgba(255,255,255,0.01) 61px), repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.01) 60px, rgba(255,255,255,0.01) 61px); }
+      .app { max-width: 480px; margin: 0 auto; padding: 0 0 80px 0; min-height: 100vh; }
+      .header { background: linear-gradient(180deg, #0a0e1a 0%, #0d1426 100%); border-bottom: 2px solid var(--gold); padding: 20px 20px 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 24px rgba(201,168,76,0.15); }
+      .header-top { display: flex; align-items: center; justify-content: space-between; }
+      .logo { font-family: 'Pirata One', cursive; font-size: 22px; color: var(--gold); letter-spacing: 1px; }
+      .logo span { color: var(--teal); }
+      .header-subtitle { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+      .logout-btn { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); background: none; border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+      .content { padding: 20px; }
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden; }
+      .card-title { font-family: 'Pirata One', cursive; font-size: 18px; color: var(--gold); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+      .field { margin-bottom: 14px; }
+      .label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; display: block; }
+      .input { width: 100%; background: var(--deep); border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 16px; padding: 10px 14px; outline: none; transition: border-color 0.2s; }
+      .btn { display: block; width: 100%; padding: 12px 20px; border-radius: 8px; border: none; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; text-transform: uppercase; }
+      .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); }
+      .btn-teal { background: linear-gradient(135deg, var(--teal-dark), var(--teal)); color: var(--navy); }
+      .btn-red { background: linear-gradient(135deg, var(--red), var(--red-light)); color: white; }
+      .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+      .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--deep); border-radius: 10px; padding: 4px; }
+      .tab { flex: 1; padding: 9px 8px; border: none; background: none; color: var(--muted); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border-radius: 7px; }
+      .tab.active { background: var(--card); color: var(--gold); }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+      .badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+      .badge-teal { background: rgba(26,188,156,0.15); color: var(--teal); border: 1px solid rgba(26,188,156,0.3); }
+      .standing-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+      .standing-rank { font-family: 'Pirata One', cursive; font-size: 22px; color: var(--gold); opacity: 0.5; width: 32px; text-align: center; }
+      .standing-name { font-size: 16px; font-weight: 700; color: var(--white); }
+      .standing-pts { font-family: 'Pirata One', cursive; font-size: 24px; color: var(--gold); }
+      .alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; text-align: center; }
+      .alert-error { background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.4); color: var(--red-light); }
+      .alert-success { background: rgba(26,188,156,0.15); border: 1px solid rgba(26,188,156,0.4); color: var(--teal); }
+      .alert-info { background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); }
+      .login-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+      .login-logo { font-family: 'Pirata One', cursive; font-size: 48px; color: var(--gold); text-align: center; line-height: 1; }
+      .login-sub { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--teal); letter-spacing: 4px; text-transform: uppercase; text-align: center; margin-bottom: 40px; }
+      .mesa-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+      .mesa-info { flex: 1; }
+      .mesa-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+      .mesa-player { font-size: 15px; color: var(--white); font-weight: 600; margin-top: 2px; }
+      .result-btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; background: var(--card); color: var(--muted); }
+      .result-btn.win { background: rgba(26,188,156,0.2); border-color: var(--teal); color: var(--teal); }
+      .result-btn.loss { background: rgba(192,57,43,0.2); border-color: var(--red-light); color: var(--red-light); }
+      .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+      .dot-green { background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+      .dot-yellow { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+      .captain-toggle { display: flex; gap: 8px; margin-top: 6px; }
+      .captain-opt { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px; text-align: center; cursor: pointer; background: var(--deep); }
+      .captain-opt.selected { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+      .captain-opt-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--muted); }
+      .captain-opt-name { font-size: 15px; font-weight: 700; color: var(--white); }
+    </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useCallback } = React;
 
-        // MOCK DATA LAYER
         const DB = {
-            get: (key) => {
-                try {
-                    const val = localStorage.getItem(key);
-                    return val ? JSON.parse(val) : null;
-                } catch (e) { return null; }
-            },
-            set: (key, val) => {
-                try {
-                    localStorage.setItem(key, JSON.stringify(val));
-                } catch (e) {}
-            }
+            get: (key) => { try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : null; } catch(e) { return null; } },
+            set: (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
         };
 
         const ADMIN_PASSWORD = 'lojista123';
 
-        const suggestRounds = (numTeams) => {
-            if (numTeams <= 4) return 3;
-            if (numTeams <= 8) return 4;
-            if (numTeams <= 16) return 5;
-            return 6;
-        };
+        const suggestRounds = (n) => n <= 4 ? 3 : n <= 8 ? 4 : n <= 16 ? 5 : 6;
 
         function generatePairings(teams, round) {
             const sorted = [...teams].sort((a, b) => b.points - a.points);
@@ -46,11 +86,9 @@
                 if (paired.has(sorted[i].id)) continue;
                 for (let j = i + 1; j < sorted.length; j++) {
                     if (paired.has(sorted[j].id)) continue;
-                    const alreadyPlayed = sorted[i].opponents?.includes(sorted[j].id);
-                    if (!alreadyPlayed) {
+                    if (!sorted[i].opponents?.includes(sorted[j].id)) {
                         pairs.push({ team1: sorted[i], team2: sorted[j], table: pairs.length + 1 });
-                        paired.add(sorted[i].id);
-                        paired.add(sorted[j].id);
+                        paired.add(sorted[i].id); paired.add(sorted[j].id);
                         break;
                     }
                 }
@@ -62,63 +100,122 @@
             return pairs;
         }
 
-        function calcOPPercent(team, allTeams) {
-            if (!team.opponents || team.opponents.length === 0) return 0;
-            const opPoints = team.opponents.map(opId => {
-                const op = allTeams.find(t => t.id === opId);
-                return op ? op.points : 0;
-            });
-            return opPoints.reduce((a, b) => a + b, 0) / opPoints.length;
+        function calcOP(team, all) {
+            if (!team.opponents?.length) return 0;
+            const pts = team.opponents.map(id => all.find(t => t.id === id)?.points || 0);
+            return pts.reduce((a,b)=>a+b,0) / pts.length;
         }
 
         function getStandings(teams) {
-            return [...teams]
-                .filter(t => t.confirmed)
-                .sort((a, b) => {
-                    if (b.points !== a.points) return b.points - a.points;
-                    const aOP = calcOPPercent(a, teams);
-                    const bOP = calcOPPercent(b, teams);
-                    return bOP - aOP;
-                })
-                .map((t, i) => ({ ...t, rank: i + 1, op: calcOPPercent(t, teams).toFixed(2) }));
+            return [...teams].filter(t=>t.confirmed).sort((a,b)=>{
+                if (b.points !== a.points) return b.points - a.points;
+                const aOP = calcOP(a, teams), bOP = calcOP(b, teams);
+                return bOP - aOP;
+            }).map((t,i)=>({...t, rank: i+1, op: calcOP(t,teams).toFixed(2)}));
         }
 
-        const initState = {
-            tournament: null,
-            teams: [],
-            rounds: []
-        };
+        // --- COMPONENTS ---
 
-        // Componentes (LoginScreen, App, etc.) seriam inseridos aqui...
-        // Para economizar espaço no prompt, vou inserir a lógica principal e o render.
-        
-        function App() {
-            const [state, setState] = useState(() => DB.get('2on2_state') || initState);
-            const [session, setSession] = useState(null);
-            const [activeTab, setActiveTab] = useState('rodada');
-
-            useEffect(() => {
-                DB.set('2on2_state', state);
-            }, [state]);
-
-            if (!session && activeTab !== 'standings') {
-                return (
-                    <div style={{padding: '50px', textAlign: 'center'}}>
-                        <h1>2on2 Tournament</h1>
-                        <button onClick={() => setSession({type: 'admin'})}>Entrar como Admin</button>
-                    </div>
-                );
-            }
+        function LoginScreen({ onLoginTeam, onLoginAdmin, teams, tournament, error, success }) {
+            const [mode, setMode] = useState('team');
+            const [fields, setFields] = useState({ teamName:'', pass:'', adminPass:'', regName:'', regP1:'', regP2:'', regPass:'', regCap:'player1' });
+            const setF = (f,v) => setFields(p=>({...p, [f]:v}));
 
             return (
-                <div style={{padding: '20px'}}>
-                    <header style={{display: 'flex', justifyContent: 'space-between'}}>
-                        <h2>{state.tournament?.name || 'Torneio One Piece'}</h2>
-                        <button onClick={() => setSession(null)}>Sair</button>
-                    </header>
-                    <main>
-                        <p>Bem-vindo ao sistema de gerenciamento de torneios.</p>
-                    </main>
+                <div className="login-screen">
+                    <div className="login-logo">2on<span>2</span></div>
+                    <div className="login-sub">One Piece TCG Tournament</div>
+                    {error && <div className="alert alert-error">{error}</div>}
+                    {success && <div className="alert alert-success">{success}</div>}
+                    <div className="card" style={{width:'100%', maxWidth:'400px'}}>
+                        <div className="tabs">
+                            <button className={`tab ${mode==='team'?'active':''}`} onClick={()=>setMode('team')}>Entrar</button>
+                            <button className={`tab ${mode==='register'?'active':''}`} onClick={()=>setMode('register')}>Cadastrar</button>
+                            <button className={`tab ${mode==='admin'?'active':''}`} onClick={()=>setMode('admin')}>Admin</button>
+                        </div>
+                        {mode === 'team' && (
+                            <div>
+                                <div className="field"><label className="label">Nome da Dupla</label><input className="input" value={fields.teamName} onChange={e=>setF('teamName',e.target.value)}/></div>
+                                <div className="field"><label className="label">Senha</label><input className="input" type="password" value={fields.pass} onChange={e=>setF('pass',e.target.value)}/></div>
+                                <button className="btn btn-gold" onClick={()=>onLoginTeam(fields.teamName, fields.pass)}>Entrar</button>
+                            </div>
+                        )}
+                        {mode === 'admin' && (
+                            <div>
+                                <div className="field"><label className="label">Senha Admin</label><input className="input" type="password" value={fields.adminPass} onChange={e=>setF('adminPass',e.target.value)}/></div>
+                                <button className="btn btn-red" onClick={()=>onLoginAdmin(fields.adminPass)}>Painel Admin</button>
+                            </div>
+                        )}
+                        {mode === 'register' && (
+                            <div>
+                                <div className="field"><label className="label">Nome da Dupla</label><input className="input" value={fields.regName} onChange={e=>setF('regName',e.target.value)}/></div>
+                                <div style={{display:'flex', gap:'8px'}}>
+                                    <div className="field" style={{flex:1}}><label className="label">Jogador 1</label><input className="input" value={fields.regP1} onChange={e=>setF('regP1',e.target.value)}/></div>
+                                    <div className="field" style={{flex:1}}><label className="label">Jogador 2</label><input className="input" value={fields.regP2} onChange={e=>setF('regP2',e.target.value)}/></div>
+                                </div>
+                                <div className="field">
+                                    <label className="label">Mesa Capitão (Prioritária)</label>
+                                    <div className="captain-toggle">
+                                        <div className={`captain-opt ${fields.regCap==='player1'?'selected':''}`} onClick={()=>setF('regCap','player1')}>
+                                            <div className="captain-opt-name">{fields.regP1||'P1'}</div>
+                                        </div>
+                                        <div className={`captain-opt ${fields.regCap==='player2'?'selected':''}`} onClick={()=>setF('regCap','player2')}>
+                                            <div className="captain-opt-name">{fields.regP2||'P2'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="field"><label className="label">Senha da Dupla</label><input className="input" type="password" value={fields.regPass} onChange={e=>setF('regPass',e.target.value)}/></div>
+                                <button className="btn btn-teal" onClick={()=>{/* handleRegister logic */}}>Cadastrar</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [state, setState] = useState(() => DB.get('2on2_state') || { tournament: null, teams: [], rounds: [] });
+            const [session, setSession] = useState(null);
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+
+            useEffect(() => { DB.set('2on2_state', state); }, [state]);
+
+            const loginTeam = (name, pass) => {
+                const team = state.teams.find(t => t.name.toLowerCase() === name.toLowerCase() && t.password === pass);
+                if (!team) return setError('Dupla ou senha incorretos.');
+                if (!team.confirmed) return setError('Aguarde confirmação do organizador.');
+                setSession({ type: 'team', id: team.id }); setError('');
+            };
+
+            const loginAdmin = (pass) => {
+                if (pass === ADMIN_PASSWORD) { setSession({ type: 'admin' }); setError(''); }
+                else setError('Senha incorreta.');
+            };
+
+            if (!session) return <LoginScreen onLoginTeam={loginTeam} onLoginAdmin={loginAdmin} teams={state.teams} tournament={state.tournament} error={error} success={success} />;
+
+            return (
+                <div className="app">
+                    <div className="header">
+                        <div className="header-top">
+                            <div className="logo">2on<span>2</span></div>
+                            <button className="logout-btn" onClick={()=>setSession(null)}>Sair</button>
+                        </div>
+                    </div>
+                    <div className="content">
+                        {session.type === 'admin' ? (
+                            <div>
+                                <h2>Painel Organizador</h2>
+                                <p>Gerencie o torneio de One Piece TCG aqui.</p>
+                            </div>
+                        ) : (
+                            <div>
+                                <h2>Painel da Dupla</h2>
+                                <p>Acompanhe suas rodadas e resultados.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             );
         }
