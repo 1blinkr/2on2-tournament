@@ -7,241 +7,129 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Crimson+Pro:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root { --navy: #0a0e1a; --deep: #0d1426; --card: #111827; --border: #1e2d4a; --gold: #c9a84c; --gold-light: #f0c96e; --red: #c0392b; --red-light: #e74c3c; --teal: #1abc9c; --teal-dark: #16a085; --text: #e8dcc8; --muted: #8a9bb5; --white: #f5f0e8; }
-        body { background: var(--navy); color: var(--text); font-family: 'Crimson Pro', serif; min-height: 100vh; background-image: radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.04) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(26,188,156,0.04) 0%, transparent 50%); }
-        .app { max-width: 480px; margin: 0 auto; padding: 0 0 80px 0; min-height: 100vh; }
-        .header { background: linear-gradient(180deg, #0a0e1a 0%, #0d1426 100%); border-bottom: 2px solid var(--gold); padding: 20px 20px 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 24px rgba(201,168,76,0.15); }
-        .header-top { display: flex; align-items: center; justify-content: space-between; }
-        .logo { font-family: 'Pirata One', cursive; font-size: 22px; color: var(--gold); letter-spacing: 1px; }
+        :root { --navy: #0a0e1a; --deep: #0d1426; --card: #111827; --border: #1e2d4a; --gold: #c9a84c; --gold-light: #f0c96e; --teal: #1abc9c; --text: #e8dcc8; --muted: #8a9bb5; --white: #f5f0e8; }
+        body { background: var(--navy); color: var(--text); font-family: 'Crimson Pro', serif; min-height: 100vh; margin: 0; }
+        .app { max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
+        .header { background: linear-gradient(180deg, #0a0e1a 0%, #0d1426 100%); border-bottom: 2px solid var(--gold); padding: 20px; position: sticky; top: 0; z-index: 100; text-align: center; }
+        .logo { font-family: 'Pirata One', cursive; font-size: 28px; color: var(--gold); }
         .logo span { color: var(--teal); }
-        .logout-btn { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); background: none; border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; cursor: pointer; }
-        .content { padding: 20px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; position: relative; }
-        .card-title { font-family: 'Pirata One', cursive; font-size: 18px; color: var(--gold); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        .field { margin-bottom: 14px; }
-        .label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; display: block; }
-        .input { width: 100%; background: var(--deep); border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 16px; padding: 10px 14px; outline: none; }
-        .btn { display: block; width: 100%; padding: 12px 20px; border-radius: 8px; border: none; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
-        .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); }
-        .btn-teal { background: linear-gradient(135deg, var(--teal-dark), var(--teal)); color: var(--navy); }
-        .btn-red { background: linear-gradient(135deg, var(--red), var(--red-light)); color: white; }
-        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-        .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--deep); border-radius: 10px; padding: 4px; }
-        .tab { flex: 1; padding: 9px 8px; border: none; background: none; color: var(--muted); font-family: 'Space Mono', monospace; font-size: 10px; cursor: pointer; border-radius: 7px; }
-        .tab.active { background: var(--card); color: var(--gold); }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px; }
+        .input { width: 100%; background: var(--deep); border: 1px solid var(--border); border-radius: 8px; color: var(--white); padding: 12px; margin-bottom: 12px; font-size: 16px; outline: none; }
+        .btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-family: 'Space Mono', monospace; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .btn-gold { background: var(--gold); color: var(--navy); }
+        .btn-gold:hover { background: var(--gold-light); }
         .standing-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-        .standing-rank { font-family: 'Pirata One', cursive; font-size: 22px; color: var(--gold); opacity: 0.5; width: 32px; text-align: center; }
-        .standing-name { flex: 1; font-size: 16px; font-weight: 700; color: var(--white); }
-        .standing-pts { font-family: 'Pirata One', cursive; font-size: 20px; color: var(--gold); }
-        .alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; text-align: center; }
-        .alert-error { background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.4); color: var(--red-light); }
-        .alert-success { background: rgba(26,188,156,0.15); border: 1px solid rgba(26,188,156,0.4); color: var(--teal); }
-        .pairing-card { background: var(--deep); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
-        .pairing-table { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--teal); margin-bottom: 8px; }
-        .pairing-match { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .pairing-vs { font-family: 'Pirata One', cursive; color: var(--gold); }
-        .result-group { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
-        .result-label { font-size: 11px; margin-bottom: 8px; color: var(--muted); }
-        .result-badges { display: flex; gap: 8px; }
-        .result-badge { flex: 1; padding: 6px; border-radius: 6px; text-align: center; font-family: 'Space Mono', monospace; font-size: 10px; cursor: pointer; border: 1px solid var(--border); transition: 0.2s; }
-        .result-badge.active { background: var(--teal); color: var(--navy); border-color: var(--teal); }
-        .result-badge.win { background: rgba(26,188,156,0.1); color: var(--teal); }
-        .result-badge.loss { background: rgba(192,57,43,0.1); color: var(--red-light); }
-        .login-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
-        .login-logo { font-family: 'Pirata One', cursive; font-size: 48px; color: var(--gold); text-align: center; }
-        .login-sub { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--teal); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 40px; }
+        .rank { font-family: 'Pirata One', cursive; font-size: 20px; color: var(--gold); width: 24px; }
+        .pts { font-family: 'Space Mono', monospace; color: var(--teal); font-weight: 700; }
+        .alert { padding: 12px; border-radius: 8px; margin-bottom: 16px; text-align: center; font-size: 14px; }
+        .alert-error { background: rgba(192,57,43,0.2); border: 1px solid rgba(192,57,43,0.4); color: #ff7675; }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect } = React;
-        const DB = {
-            get: (key) => JSON.parse(localStorage.getItem(key)) || null,
-            set: (key, val) => localStorage.setItem(key, JSON.stringify(val))
+        const firebaseConfig = {
+            apiKey: "AIzaSyCV4BZlj4gu9WdF0amY7FTfVq065cAh3os",
+            authDomain: "oneblinker-2on2.firebaseapp.com",
+            projectId: "oneblinker-2on2",
+            storageBucket: "oneblinker-2on2.firebasestorage.app",
+            messagingSenderId: "95040613299",
+            appId: "1:95040613299:web:56d3ea2b900d8fa5bf39c6"
         };
-        const INITIAL_STATE = { status: 'registration', currentRound: 0, teams: [], rounds: [], adminPass: 'lojista123' };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        const { useState, useEffect } = React;
 
         function App() {
-            const [state, setState] = useState(() => DB.get('2on2_state') || INITIAL_STATE);
-            const [session, setSession] = useState(null);
-            const [error, setError] = useState('');
-            const [success, setSuccess] = useState('');
+            const [user, setUser] = useState(null);
+            const [teams, setTeams] = useState([]);
+            const [loading, setLoading] = useState(true);
 
-            useEffect(() => DB.set('2on2_state', state), [state]);
-
-            const notify = (msg, isErr = false) => {
-                if (isErr) { setError(msg); setSuccess(''); }
-                else { setSuccess(msg); setError(''); }
-                setTimeout(() => { setError(''); setSuccess(''); }, 4000);
-            };
-
-            const handleRegister = (f) => {
-                if (!f.name || !f.p1 || !f.p2 || !f.pass) return notify('Preencha todos os campos.', true);
-                if (state.teams.find(t => t.name.toLowerCase() === f.name.toLowerCase())) return notify('Dupla já existe.', true);
-                const team = { id: Date.now().toString(), ...f, confirmed: false, points: 0, opponents: [] };
-                setState(p => ({ ...p, teams: [...p.teams, team] }));
-                notify('Cadastro realizado! Aguarde aprovação.');
-            };
-
-            const handleLogin = (name, pass) => {
-                const team = state.teams.find(t => t.name.toLowerCase() === name.toLowerCase() && t.pass === pass);
-                if (!team) return notify('Nome ou senha incorretos.', true);
-                if (!team.confirmed) return notify('Dupla não aprovada pelo admin.', true);
-                setSession({ type: 'team', id: team.id });
-            };
-
-            const generateRound = () => {
-                const active = state.teams.filter(t => t.confirmed);
-                if (active.length < 2) return notify('Mínimo 2 duplas.', true);
-                const sorted = [...active].sort((a, b) => b.points - a.points);
-                const pairings = [];
-                const paired = new Set();
-                for (let i = 0; i < sorted.length; i++) {
-                    if (paired.has(sorted[i].id)) continue;
-                    let match = sorted.slice(i + 1).find(t => !paired.has(t.id) && !sorted[i].opponents.includes(t.id));
-                    if (!match) match = sorted.slice(i + 1).find(t => !paired.has(t.id));
-                    if (match) {
-                        pairings.push({ t1: sorted[i].id, t2: match.id, results: { p1: null, p2: null } });
-                        paired.add(sorted[i].id); paired.add(match.id);
-                    } else {
-                        pairings.push({ t1: sorted[i].id, t2: 'BYE', results: { p1: 'W', p2: 'W' } });
-                        paired.add(sorted[i].id);
-                    }
-                }
-                setState(p => ({ ...p, status: 'active', currentRound: p.currentRound + 1, rounds: [...p.rounds, pairings] }));
-                notify('Rodada ' + (state.currentRound + 1) + ' gerada!');
-            };
-
-            const reportResult = (pairingIdx, results) => {
-                const roundIdx = state.currentRound - 1;
-                const newRounds = [...state.rounds];
-                newRounds[roundIdx][pairingIdx].results = results;
-                setState(p => ({ ...p, rounds: newRounds }));
-                notify('Resultado salvo!');
-            };
-
-            const closeRound = () => {
-                const round = state.rounds[state.currentRound - 1];
-                if (round.some(m => m.t2 !== 'BYE' && (m.results.p1 === null || m.results.p2 === null))) return notify('Reporte todos os resultados.', true);
-                const isOdd = state.currentRound % 2 === 1;
-                const newTeams = state.teams.map(t => {
-                    let pts = t.points;
-                    let opps = [...t.opponents];
-                    round.forEach(m => {
-                        if (m.t1 === t.id || m.t2 === t.id) {
-                            const isT1 = m.t1 === t.id;
-                            const opp = isT1 ? m.t2 : m.t1;
-                            if (opp !== 'BYE') opps.push(opp);
-                            if (m.t2 === 'BYE') pts += 5;
-                            else {
-                                const winP1 = isT1 ? m.results.p1 === 'T1' : m.results.p1 === 'T2';
-                                const winP2 = isT1 ? m.results.p2 === 'T1' : m.results.p2 === 'T2';
-                                pts += winP1 ? (isOdd ? 3 : 2) : 0;
-                                pts += winP2 ? (isOdd ? 2 : 3) : 0;
-                            }
-                        }
-                    });
-                    return { ...t, points: pts, opponents: opps };
+            useEffect(() => {
+                const unsubAuth = auth.onAuthStateChanged(u => setUser(u));
+                const unsubTeams = db.collection('teams').onSnapshot(snap => {
+                    setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                    setLoading(false);
                 });
-                setState(p => ({ ...p, status: 'round_closed', teams: newTeams }));
-                notify('Rodada encerrada!');
-            };
+                return () => { unsubAuth(); unsubTeams(); };
+            }, []);
 
-            if (!session) return <Login onLogin={handleLogin} onRegister={handleRegister} onAdmin={(p) => p === state.adminPass ? setSession({type:'admin'}) : notify('Senha incorreta', true)} error={error} success={success} />;
+            if (loading) return <div style={{padding:40, textAlign:'center', color:'var(--gold)'}}>Carregando Navio...</div>;
 
             return (
                 <div className="app">
-                    <header className="header"><div className="header-top"><div className="logo">2on<span>2</span></div><button className="logout-btn" onClick={() => setSession(null)}>Sair</button></div></header>
-                    <main className="content">
-                        {error && <div className="alert alert-error">{error}</div>}
-                        {success && <div className="alert alert-success">{success}</div>}
-                        {session.type === 'admin' ? 
-                            <Admin state={state} setState={setState} onGenerate={generateRound} onReport={reportResult} onClose={closeRound} /> : 
-                            <Player state={state} teamId={session.id} />}
-                    </main>
-                </div>
-            );
-        }
-
-        function Login({ onLogin, onRegister, onAdmin, error, success }) {
-            const [tab, setTab] = useState('login');
-            const [f, setF] = useState({ name: '', pass: '', p1: '', p2: '' });
-            return (
-                <div className="login-screen">
-                    <div className="login-logo">2on<span>2</span></div><div className="login-sub">One Piece TCG</div>
-                    <div className="card" style={{width:'100%'}}>
-                        <div className="tabs">
-                            <button className={`tab ${tab==='login'?'active':''}`} onClick={()=>setTab('login')}>Entrar</button>
-                            <button className={`tab ${tab==='reg'?'active':''}`} onClick={()=>setTab('reg')}>Cadastrar</button>
-                            <button className={`tab ${tab==='admin'?'active':''}`} onClick={()=>setTab('admin')}>Admin</button>
+                    <div className="header">
+                        <div className="logo">2on<span>2</span> Tournament</div>
+                    </div>
+                    {user ? (
+                        <div className="card">
+                            <h2 style={{fontFamily:'Pirata One', color:'var(--gold)'}}>Olá, Capitão!</h2>
+                            <p style={{margin:'10px 0', fontSize:'14px', color:'var(--muted)'}}>Logado como: {user.email}</p>
+                            <button className="btn btn-gold" onClick={() => auth.signOut()}>Sair</button>
                         </div>
-                        {tab==='login' && <div><Field label="Dupla" onChange={v=>setF({...f, name:v})} /><Field label="Senha" type="password" onChange={v=>setF({...f, pass:v})} /><button className="btn btn-gold" onClick={()=>onLogin(f.name, f.pass)}>Entrar</button></div>}
-                        {tab==='reg' && <div><Field label="Nome da Dupla" onChange={v=>setF({...f, name:v})} /><Field label="Jogador 1 (Capitão)" onChange={v=>setF({...f, p1:v})} /><Field label="Jogador 2" onChange={v=>setF({...f, p2:v})} /><Field label="Senha" type="password" onChange={v=>setF({...f, pass:v})} /><button className="btn btn-teal" onClick={()=>onRegister(f)}>Cadastrar</button></div>}
-                        {tab==='admin' && <div><Field label="Senha Mestre" type="password" onChange={v=>setF({...f, pass:v})} /><button className="btn btn-red" onClick={()=>onAdmin(f.pass)}>Painel Admin</button></div>}
-                    </div>
-                </div>
-            );
-        }
-
-        const Field = ({ label, type="text", onChange }) => (
-            <div className="field"><label className="label">{label}</label><input className="input" type={type} onChange={e=>onChange(e.target.value)} /></div>
-        );
-
-        function Admin({ state, setState, onGenerate, onReport, onClose }) {
-            const pending = state.teams.filter(t => !t.confirmed);
-            const currentPairings = state.rounds[state.currentRound-1] || [];
-            return (
-                <div>
-                    <div className="card"><div className="card-title">Torneio</div>
-                        {state.status !== 'active' && <button className="btn btn-gold" onClick={onGenerate}>{state.currentRound === 0 ? 'Iniciar' : 'Nova Rodada'}</button>}
-                        {state.status === 'active' && <button className="btn btn-teal" onClick={onClose}>Fechar Rodada {state.currentRound}</button>}
-                        <button className="btn btn-ghost" style={{marginTop:'10px'}} onClick={() => confirm('Resetar?') && setState(INITIAL_STATE)}>Resetar Geral</button>
-                    </div>
-                    {pending.length > 0 && <div className="card"><div className="card-title">Aprovar Duplas</div>{pending.map(t => <div key={t.id} className="standing-row"><div className="standing-name">{t.name}</div><button className="btn btn-teal" style={{width:'auto', padding:'5px 10px'}} onClick={() => setState(p => ({...p, teams: p.teams.map(x => x.id===t.id ? {...x, confirmed:true} : x)}))}>OK</button></div>)}</div>}
-                    {state.status === 'active' && <div className="card"><div className="card-title">Rodada {state.currentRound}</div>{currentPairings.map((p, i) => <PairingCard key={i} pairing={p} teams={state.teams} round={state.currentRound} onReport={(res) => onReport(i, res)} isAdmin />)}</div>}
-                    <div className="card"><div className="card-title">Standings</div>{[...state.teams].filter(t=>t.confirmed).sort((a,b)=>b.points-a.points).map((t, i) => <div key={t.id} className="standing-row"><div className="standing-rank">{i+1}</div><div className="standing-name">{t.name}</div><div className="standing-pts">{t.points}</div></div>)}</div>
-                </div>
-            );
-        }
-
-        function Player({ state, teamId }) {
-            const team = state.teams.find(t => t.id === teamId);
-            const pairing = state.rounds[state.currentRound-1]?.find(p => p.t1 === teamId || p.t2 === teamId);
-            return (
-                <div>
-                    <div className="card" style={{textAlign:'center'}}><div className="card-title">{team.name}</div><div style={{fontSize:'32px', color:'var(--gold)', fontWeight:'bold'}}>{team.points} pts</div></div>
-                    {pairing && <div className="card"><div className="card-title">Sua Partida (Rodada {state.currentRound})</div><PairingCard pairing={pairing} teams={state.teams} round={state.currentRound} /></div>}
-                    <div className="card"><div className="card-title">Classificação</div>{[...state.teams].filter(t=>t.confirmed).sort((a,b)=>b.points-a.points).map((t, i) => <div key={t.id} className="standing-row" style={{opacity: t.id===teamId?1:0.6}}><div className="standing-rank">{i+1}</div><div className="standing-name" style={{color: t.id===teamId?'var(--teal)':'white'}}>{t.name} {t.id===teamId && '(Você)'}</div><div className="standing-pts">{t.points}</div></div>)}</div>
-                </div>
-            );
-        }
-
-        function PairingCard({ pairing, teams, round, onReport, isAdmin }) {
-            const t1 = teams.find(t => t.id === pairing.t1);
-            const t2 = pairing.t2 === 'BYE' ? { name: 'BYE' } : teams.find(t => t.id === pairing.t2);
-            const isOdd = round % 2 === 1;
-            const res = pairing.results;
-            const Badge = ({ table, side }) => {
-                const val = side === 'T1' ? 'T1' : 'T2';
-                const active = res[table] === val;
-                return <div className={`result-badge ${active ? 'active' : ''}`} onClick={() => isAdmin && onReport({ ...res, [table]: val })}>{side === 'T1' ? t1.name : t2.name}</div>;
-            };
-            return (
-                <div className="pairing-card">
-                    <div className="pairing-match"><span>{t1.name}</span> <span className="pairing-vs">VS</span> <span>{t2.name}</span></div>
-                    {t2.name !== 'BYE' && (
-                        <div>
-                            <div className="result-group"><div className="result-label">Mesa Prioritária (3 pts): {isOdd ? 'Capitães' : 'Mates'}</div><div className="result-badges"><Badge table="p1" side="T1" /><Badge table="p1" side="T2" /></div></div>
-                            <div className="result-group"><div className="result-label">Mesa 2 (2 pts): {isOdd ? 'Mates' : 'Capitães'}</div><div className="result-badges"><Badge table="p2" side="T1" /><Badge table="p2" side="T2" /></div></div>
+                    ) : (
+                        <div className="card">
+                            <h3 style={{fontFamily:'Pirata One', marginBottom:15}}>Acessar Torneio</h3>
+                            <Login />
                         </div>
                     )}
+                    <div className="card">
+                        <h3 style={{fontFamily:'Pirata One', marginBottom:15, color:'var(--teal)'}}>Standings Realtime</h3>
+                        <Standings teams={teams} />
+                    </div>
                 </div>
             );
         }
+
+        function Login() {
+            const [email, setEmail] = useState('');
+            const [pass, setPass] = useState('');
+            const [err, setErr] = useState('');
+
+            const handleLogin = async () => {
+                setErr('');
+                try { await auth.signInWithEmailAndPassword(email, pass); }
+                catch (e) { setErr('Email ou senha incorretos.'); }
+            };
+
+            return (
+                <div>
+                    {err && <div className="alert alert-error">{err}</div>}
+                    <input className="input" placeholder="Email" type="email" onChange={e => setEmail(e.target.value)} />
+                    <input className="input" type="password" placeholder="Senha" onChange={e => setPass(e.target.value)} />
+                    <button className="btn btn-gold" onClick={handleLogin}>Entrar</button>
+                </div>
+            );
+        }
+
+        function Standings({ teams }) {
+            const sorted = [...teams].sort((a,b) => (b.points || 0) - (a.points || 0));
+            if (sorted.length === 0) return <p style={{textAlign:'center', opacity:0.5}}>Aguardando início...</p>;
+            
+            return (
+                <div>
+                    {sorted.map((t, i) => (
+                        <div key={t.id} className="standing-row">
+                            <span className="rank">{i+1}º</span>
+                            <div style={{flex:1}}>
+                                <div style={{fontWeight:700, color:'var(--white)'}}>{t.name || 'Dupla'}</div>
+                                <div style={{fontSize:10, color:'var(--muted)'}}>{t.player1} & {t.player2}</div>
+                            </div>
+                            <span className="pts">{t.points || 0} pts</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
