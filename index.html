@@ -39,13 +39,17 @@
         .alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; text-align: center; }
         .alert-error { background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.4); color: var(--red-light); }
         .alert-success { background: rgba(26,188,156,0.15); border: 1px solid rgba(26,188,156,0.4); color: var(--teal); }
-        .pairing-card { display: flex; flex-direction: column; gap: 10px; padding: 15px; background: var(--deep); border-radius: 10px; margin-bottom: 10px; }
-        .pairing-team { display: flex; justify-content: space-between; align-items: center; }
-        .pairing-vs { font-family: 'Pirata One', cursive; color: var(--gold); text-align: center; font-size: 14px; }
-        .result-badges { display: flex; gap: 10px; margin-top: 10px; }
-        .result-badge { flex: 1; padding: 8px; border-radius: 6px; text-align: center; font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; border: 1px solid var(--border); }
-        .result-badge.win { background: rgba(26,188,156,0.1); color: var(--teal); border-color: var(--teal); }
-        .result-badge.loss { background: rgba(192,57,43,0.1); color: var(--red-light); border-color: var(--red-light); }
+        .pairing-card { background: var(--deep); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+        .pairing-table { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--teal); margin-bottom: 8px; }
+        .pairing-match { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .pairing-vs { font-family: 'Pirata One', cursive; color: var(--gold); }
+        .result-group { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
+        .result-label { font-size: 11px; margin-bottom: 8px; color: var(--muted); }
+        .result-badges { display: flex; gap: 8px; }
+        .result-badge { flex: 1; padding: 6px; border-radius: 6px; text-align: center; font-family: 'Space Mono', monospace; font-size: 10px; cursor: pointer; border: 1px solid var(--border); transition: 0.2s; }
+        .result-badge.active { background: var(--teal); color: var(--navy); border-color: var(--teal); }
+        .result-badge.win { background: rgba(26,188,156,0.1); color: var(--teal); }
+        .result-badge.loss { background: rgba(192,57,43,0.1); color: var(--red-light); }
         .login-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
         .login-logo { font-family: 'Pirata One', cursive; font-size: 48px; color: var(--gold); text-align: center; }
         .login-sub { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--teal); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 40px; }
@@ -55,19 +59,11 @@
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect } = React;
-
         const DB = {
-            get: (key) => { try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; } },
-            set: (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
+            get: (key) => JSON.parse(localStorage.getItem(key)) || null,
+            set: (key, val) => localStorage.setItem(key, JSON.stringify(val))
         };
-
-        const INITIAL_STATE = {
-            status: 'setup', 
-            currentRound: 0,
-            teams: [],
-            rounds: [],
-            adminPass: 'lojista123'
-        };
+        const INITIAL_STATE = { status: 'registration', currentRound: 0, teams: [], rounds: [], adminPass: 'lojista123' };
 
         function App() {
             const [state, setState] = useState(() => DB.get('2on2_state') || INITIAL_STATE);
@@ -75,7 +71,7 @@
             const [error, setError] = useState('');
             const [success, setSuccess] = useState('');
 
-            useEffect(() => { DB.set('2on2_state', state); }, [state]);
+            useEffect(() => DB.set('2on2_state', state), [state]);
 
             const notify = (msg, isErr = false) => {
                 if (isErr) { setError(msg); setSuccess(''); }
@@ -83,80 +79,79 @@
                 setTimeout(() => { setError(''); setSuccess(''); }, 4000);
             };
 
-            const handleRegister = (data) => {
-                if (!data.name || !data.pass) return notify('Preencha nome e senha.', true);
-                if (state.teams.find(t => t.name.toLowerCase() === data.name.toLowerCase())) return notify('Dupla já existe.', true);
-                
-                const newTeam = { id: Date.now().toString(), name: data.name, p1: data.p1, p2: data.p2, pass: data.pass, confirmed: false, points: 0, opponents: [] };
-                setState(prev => ({ ...prev, teams: [...prev.teams, newTeam] }));
-                notify('Cadastro enviado! Peça ao admin para te aprovar.');
+            const handleRegister = (f) => {
+                if (!f.name || !f.p1 || !f.p2 || !f.pass) return notify('Preencha todos os campos.', true);
+                if (state.teams.find(t => t.name.toLowerCase() === f.name.toLowerCase())) return notify('Dupla já existe.', true);
+                const team = { id: Date.now().toString(), ...f, confirmed: false, points: 0, opponents: [] };
+                setState(p => ({ ...p, teams: [...p.teams, team] }));
+                notify('Cadastro realizado! Aguarde aprovação.');
             };
 
             const handleLogin = (name, pass) => {
                 const team = state.teams.find(t => t.name.toLowerCase() === name.toLowerCase() && t.pass === pass);
                 if (!team) return notify('Nome ou senha incorretos.', true);
-                if (!team.confirmed) return notify('Aguarde o admin aprovar sua dupla.', true);
+                if (!team.confirmed) return notify('Dupla não aprovada pelo admin.', true);
                 setSession({ type: 'team', id: team.id });
             };
 
-            const handleAdminLogin = (pass) => {
-                if (pass === state.adminPass) setSession({ type: 'admin' });
-                else notify('Senha admin incorreta.', true);
-            };
-
-            const generateNextRound = () => {
-                const confirmed = state.teams.filter(t => t.confirmed);
-                if (confirmed.length < 2) return notify('Mínimo 2 duplas confirmadas.', true);
-                
-                const sorted = [...confirmed].sort((a, b) => b.points - a.points);
+            const generateRound = () => {
+                const active = state.teams.filter(t => t.confirmed);
+                if (active.length < 2) return notify('Mínimo 2 duplas.', true);
+                const sorted = [...active].sort((a, b) => b.points - a.points);
                 const pairings = [];
                 const paired = new Set();
-
                 for (let i = 0; i < sorted.length; i++) {
                     if (paired.has(sorted[i].id)) continue;
-                    let found = false;
-                    for (let j = i + 1; j < sorted.length; j++) {
-                        if (!paired.has(sorted[j].id) && !sorted[i].opponents.includes(sorted[j].id)) {
-                            pairings.push({ t1: sorted[i].id, t2: sorted[j].id, result: null });
-                            paired.add(sorted[i].id); paired.add(sorted[j].id);
-                            found = true; break;
-                        }
-                    }
-                    if (!found) {
-                        const nextAvailable = sorted.slice(i+1).find(t => !paired.has(t.id));
-                        if (nextAvailable) {
-                            pairings.push({ t1: sorted[i].id, t2: nextAvailable.id, result: null });
-                            paired.add(sorted[i].id); paired.add(nextAvailable.id);
-                        } else {
-                            pairings.push({ t1: sorted[i].id, t2: 'BYE', result: sorted[i].id });
-                            paired.add(sorted[i].id);
-                        }
+                    let match = sorted.slice(i + 1).find(t => !paired.has(t.id) && !sorted[i].opponents.includes(t.id));
+                    if (!match) match = sorted.slice(i + 1).find(t => !paired.has(t.id));
+                    if (match) {
+                        pairings.push({ t1: sorted[i].id, t2: match.id, results: { p1: null, p2: null } });
+                        paired.add(sorted[i].id); paired.add(match.id);
+                    } else {
+                        pairings.push({ t1: sorted[i].id, t2: 'BYE', results: { p1: 'W', p2: 'W' } });
+                        paired.add(sorted[i].id);
                     }
                 }
-
-                setState(prev => ({ ...prev, status: 'active', currentRound: prev.currentRound + 1, rounds: [...prev.rounds, pairings] }));
-                notify('Nova rodada gerada!');
+                setState(p => ({ ...p, status: 'active', currentRound: p.currentRound + 1, rounds: [...p.rounds, pairings] }));
+                notify('Rodada ' + (state.currentRound + 1) + ' gerada!');
             };
 
-            const reportResult = (winnerId, loserId) => {
-                const rIdx = state.currentRound - 1;
+            const reportResult = (pairingIdx, results) => {
+                const roundIdx = state.currentRound - 1;
                 const newRounds = [...state.rounds];
-                const matchIdx = newRounds[rIdx].findIndex(m => (m.t1 === winnerId && m.t2 === loserId) || (m.t1 === loserId && m.t2 === winnerId));
-                
-                if (newRounds[rIdx][matchIdx].result) return notify('Resultado já existe.', true);
-                newRounds[rIdx][matchIdx].result = winnerId;
-
-                const newTeams = state.teams.map(t => {
-                    if (t.id === winnerId) return { ...t, points: t.points + 3, opponents: [...t.opponents, loserId] };
-                    if (t.id === loserId && loserId !== 'BYE') return { ...t, opponents: [...t.opponents, winnerId] };
-                    return t;
-                });
-
-                setState(prev => ({ ...prev, rounds: newRounds, teams: newTeams }));
+                newRounds[roundIdx][pairingIdx].results = results;
+                setState(p => ({ ...p, rounds: newRounds }));
                 notify('Resultado salvo!');
             };
 
-            if (!session) return <Login onLogin={handleLogin} onRegister={handleRegister} onAdminLogin={handleAdminLogin} error={error} success={success} />;
+            const closeRound = () => {
+                const round = state.rounds[state.currentRound - 1];
+                if (round.some(m => m.t2 !== 'BYE' && (m.results.p1 === null || m.results.p2 === null))) return notify('Reporte todos os resultados.', true);
+                const isOdd = state.currentRound % 2 === 1;
+                const newTeams = state.teams.map(t => {
+                    let pts = t.points;
+                    let opps = [...t.opponents];
+                    round.forEach(m => {
+                        if (m.t1 === t.id || m.t2 === t.id) {
+                            const isT1 = m.t1 === t.id;
+                            const opp = isT1 ? m.t2 : m.t1;
+                            if (opp !== 'BYE') opps.push(opp);
+                            if (m.t2 === 'BYE') pts += 5;
+                            else {
+                                const winP1 = isT1 ? m.results.p1 === 'T1' : m.results.p1 === 'T2';
+                                const winP2 = isT1 ? m.results.p2 === 'T1' : m.results.p2 === 'T2';
+                                pts += winP1 ? (isOdd ? 3 : 2) : 0;
+                                pts += winP2 ? (isOdd ? 2 : 3) : 0;
+                            }
+                        }
+                    });
+                    return { ...t, points: pts, opponents: opps };
+                });
+                setState(p => ({ ...p, status: 'round_closed', teams: newTeams }));
+                notify('Rodada encerrada!');
+            };
+
+            if (!session) return <Login onLogin={handleLogin} onRegister={handleRegister} onAdmin={(p) => p === state.adminPass ? setSession({type:'admin'}) : notify('Senha incorreta', true)} error={error} success={success} />;
 
             return (
                 <div className="app">
@@ -164,100 +159,90 @@
                     <main className="content">
                         {error && <div className="alert alert-error">{error}</div>}
                         {success && <div className="alert alert-success">{success}</div>}
-                        {session.type === 'admin' ? <AdminPanel state={state} setState={setState} onGenerate={generateNextRound} onReport={reportResult} /> : <PlayerPanel state={state} teamId={session.id} onReport={reportResult} />}
+                        {session.type === 'admin' ? 
+                            <Admin state={state} setState={setState} onGenerate={generateRound} onReport={reportResult} onClose={closeRound} /> : 
+                            <Player state={state} teamId={session.id} />}
                     </main>
                 </div>
             );
         }
 
-        function Login({ onLogin, onRegister, onAdminLogin, error, success }) {
-            const [mode, setMode] = useState('login');
-            const [f, setF] = useState({ name:'', pass:'', p1:'', p2:'' });
+        function Login({ onLogin, onRegister, onAdmin, error, success }) {
+            const [tab, setTab] = useState('login');
+            const [f, setF] = useState({ name: '', pass: '', p1: '', p2: '' });
             return (
                 <div className="login-screen">
                     <div className="login-logo">2on<span>2</span></div><div className="login-sub">One Piece TCG</div>
                     <div className="card" style={{width:'100%'}}>
                         <div className="tabs">
-                            <button className={`tab ${mode==='login'?'active':''}`} onClick={()=>setMode('login')}>Entrar</button>
-                            <button className={`tab ${mode==='reg'?'active':''}`} onClick={()=>setMode('reg')}>Cadastrar</button>
-                            <button className={`tab ${mode==='admin'?'active':''}`} onClick={()=>setMode('admin')}>Admin</button>
+                            <button className={`tab ${tab==='login'?'active':''}`} onClick={()=>setTab('login')}>Entrar</button>
+                            <button className={`tab ${tab==='reg'?'active':''}`} onClick={()=>setTab('reg')}>Cadastrar</button>
+                            <button className={`tab ${tab==='admin'?'active':''}`} onClick={()=>setTab('admin')}>Admin</button>
                         </div>
-                        {mode==='login' && (<div><div className="field"><label className="label">Dupla</label><input className="input" onChange={e=>setF({...f, name:e.target.value})}/></div><div className="field"><label className="label">Senha</label><input className="input" type="password" onChange={e=>setF({...f, pass:e.target.value})}/></div><button className="btn btn-gold" onClick={()=>onLogin(f.name, f.pass)}>Entrar</button></div>)}
-                        {mode==='reg' && (<div><div className="field"><label className="label">Nome da Dupla</label><input className="input" onChange={e=>setF({...f, name:e.target.value})}/></div><div className="field"><label className="label">Jogador 1</label><input className="input" onChange={e=>setF({...f, p1:e.target.value})}/></div><div className="field"><label className="label">Jogador 2</label><input className="input" onChange={e=>setF({...f, p2:e.target.value})}/></div><div className="field"><label className="label">Senha</label><input className="input" type="password" onChange={e=>setF({...f, pass:e.target.value})}/></div><button className="btn btn-teal" onClick={()=>onRegister(f)}>Cadastrar</button></div>)}
-                        {mode==='admin' && (<div><div className="field"><label className="label">Senha Admin</label><input className="input" type="password" onChange={e=>setF({...f, pass:e.target.value})}/></div><button className="btn btn-red" onClick={()=>onAdminLogin(f.pass)}>Admin</button></div>)}
+                        {tab==='login' && <div><Field label="Dupla" onChange={v=>setF({...f, name:v})} /><Field label="Senha" type="password" onChange={v=>setF({...f, pass:v})} /><button className="btn btn-gold" onClick={()=>onLogin(f.name, f.pass)}>Entrar</button></div>}
+                        {tab==='reg' && <div><Field label="Nome da Dupla" onChange={v=>setF({...f, name:v})} /><Field label="Jogador 1 (Capitão)" onChange={v=>setF({...f, p1:v})} /><Field label="Jogador 2" onChange={v=>setF({...f, p2:v})} /><Field label="Senha" type="password" onChange={v=>setF({...f, pass:v})} /><button className="btn btn-teal" onClick={()=>onRegister(f)}>Cadastrar</button></div>}
+                        {tab==='admin' && <div><Field label="Senha Mestre" type="password" onChange={v=>setF({...f, pass:v})} /><button className="btn btn-red" onClick={()=>onAdmin(f.pass)}>Painel Admin</button></div>}
                     </div>
                 </div>
             );
         }
 
-        function AdminPanel({ state, setState, onGenerate, onReport }) {
-            const confirmed = state.teams.filter(t=>t.confirmed);
-            const pending = state.teams.filter(t=>!t.confirmed);
-            const currentR = state.rounds[state.currentRound-1] || [];
-            
+        const Field = ({ label, type="text", onChange }) => (
+            <div className="field"><label className="label">{label}</label><input className="input" type={type} onChange={e=>onChange(e.target.value)} /></div>
+        );
+
+        function Admin({ state, setState, onGenerate, onReport, onClose }) {
+            const pending = state.teams.filter(t => !t.confirmed);
+            const currentPairings = state.rounds[state.currentRound-1] || [];
             return (
                 <div>
-                    <div className="card"><div className="card-title">Ações</div>
-                        <button className="btn btn-gold" style={{marginBottom:'10px'}} onClick={onGenerate} disabled={state.status==='active' && currentR.some(m=>!m.result)}>
-                            {state.status==='setup' ? 'Iniciar Torneio' : 'Próxima Rodada'}
-                        </button>
-                        <button className="btn btn-ghost" onClick={()=>{if(confirm('Resetar?'))setState(INITIAL_STATE)}}>Resetar Tudo</button>
+                    <div className="card"><div className="card-title">Torneio</div>
+                        {state.status !== 'active' && <button className="btn btn-gold" onClick={onGenerate}>{state.currentRound === 0 ? 'Iniciar' : 'Nova Rodada'}</button>}
+                        {state.status === 'active' && <button className="btn btn-teal" onClick={onClose}>Fechar Rodada {state.currentRound}</button>}
+                        <button className="btn btn-ghost" style={{marginTop:'10px'}} onClick={() => confirm('Resetar?') && setState(INITIAL_STATE)}>Resetar Geral</button>
                     </div>
-                    {pending.length > 0 && (
-                        <div className="card"><div className="card-title">Aprovar ({pending.length})</div>
-                            {pending.map(t=>(<div key={t.id} className="standing-row"><div className="standing-name">{t.name}</div><button className="btn btn-teal" style={{width:'auto', padding:'4px 8px'}} onClick={()=>setState(p=>({...p, teams: p.teams.map(x=>x.id===t.id?({...x,confirmed:true}):x)}))}>OK</button></div>))}
-                        </div>
-                    )}
-                    {state.status === 'active' && (
-                        <div className="card"><div className="card-title">Rodada {state.currentRound}</div>
-                            {currentR.map((m,i)=>(
-                                <div key={i} className="pairing-card">
-                                    <div className="pairing-team"><span>{state.teams.find(x=>x.id===m.t1)?.name}</span> <span>vs</span> <span>{m.t2==='BYE'?'BYE':state.teams.find(x=>x.id===m.t2)?.name}</span></div>
-                                    {!m.result && m.t2!=='BYE' && (<div className="result-badges"><div className="result-badge win" onClick={()=>onReport(m.t1, m.t2)}>Ganhou T1</div><div className="result-badge win" onClick={()=>onReport(m.t2, m.t1)}>Ganhou T2</div></div>)}
-                                    {m.result && <div className="alert alert-success" style={{margin:0}}>Vencedor: {state.teams.find(x=>x.id===m.result)?.name}</div>}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    <div className="card"><div className="card-title">Standings</div>
-                        {[...confirmed].sort((a,b)=>b.points-a.points).map((t,i)=>(<div key={t.id} className="standing-row"><div className="standing-rank">{i+1}</div><div className="standing-name">{t.name}</div><div className="standing-pts">{t.points}</div></div>))}
-                    </div>
+                    {pending.length > 0 && <div className="card"><div className="card-title">Aprovar Duplas</div>{pending.map(t => <div key={t.id} className="standing-row"><div className="standing-name">{t.name}</div><button className="btn btn-teal" style={{width:'auto', padding:'5px 10px'}} onClick={() => setState(p => ({...p, teams: p.teams.map(x => x.id===t.id ? {...x, confirmed:true} : x)}))}>OK</button></div>)}</div>}
+                    {state.status === 'active' && <div className="card"><div className="card-title">Rodada {state.currentRound}</div>{currentPairings.map((p, i) => <PairingCard key={i} pairing={p} teams={state.teams} round={state.currentRound} onReport={(res) => onReport(i, res)} isAdmin />)}</div>}
+                    <div className="card"><div className="card-title">Standings</div>{[...state.teams].filter(t=>t.confirmed).sort((a,b)=>b.points-a.points).map((t, i) => <div key={t.id} className="standing-row"><div className="standing-rank">{i+1}</div><div className="standing-name">{t.name}</div><div className="standing-pts">{t.points}</div></div>)}</div>
                 </div>
             );
         }
 
-        function PlayerPanel({ state, teamId, onReport }) {
-            const team = state.teams.find(t=>t.id===teamId);
-            const match = state.rounds[state.currentRound-1]?.find(m=>m.t1===teamId || m.t2===teamId);
-            const opp = match ? (match.t1===teamId ? match.t2 : match.t1) : null;
-            const oppName = opp === 'BYE' ? 'BYE' : state.teams.find(x=>x.id===opp)?.name;
-
+        function Player({ state, teamId }) {
+            const team = state.teams.find(t => t.id === teamId);
+            const pairing = state.rounds[state.currentRound-1]?.find(p => p.t1 === teamId || p.t2 === teamId);
             return (
                 <div>
-                    <div className="card"><div className="card-title">{team.name}</div><div className="standing-pts" style={{textAlign:'center', fontSize:'40px'}}>{team.points} pts</div></div>
-                    {match && (
-                        <div className="card"><div className="card-title">Rodada {state.currentRound}</div>
-                            <div className="pairing-card">
-                                <div className="pairing-team"><span>{team.name}</span> <span className="pairing-vs">VS</span> <span>{oppName}</span></div>
-                                {!match.result ? (<div className="result-badges"><div className="result-badge win" onClick={()=>onReport(teamId, opp)}>Ganhei</div><div className="result-badge loss" onClick={()=>onReport(opp, teamId)}>Perdi</div></div>) : (
-                                    <div className={`alert ${match.result===teamId?'alert-success':'alert-error'}`} style={{marginTop:'10px'}}>{match.result===teamId?'VITORIA!':'DERROTA'}</div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                    <div className="card"><div className="card-title">Classificação</div>
-                        {[...state.teams].filter(t=>t.confirmed).sort((a,b)=>b.points-a.points).map((t,i)=>(
-                            <div key={t.id} className="standing-row" style={{opacity:t.id===teamId?1:0.6}}>
-                                <div className="standing-rank">{i+1}</div><div className="standing-name" style={{color:t.id===teamId?'var(--teal)':'white'}}>{t.name} {t.id===teamId&&'(Você)'}</div><div className="standing-pts">{t.points}</div>
-                            </div>
-                        ))}
-                    </div>
+                    <div className="card" style={{textAlign:'center'}}><div className="card-title">{team.name}</div><div style={{fontSize:'32px', color:'var(--gold)', fontWeight:'bold'}}>{team.points} pts</div></div>
+                    {pairing && <div className="card"><div className="card-title">Sua Partida (Rodada {state.currentRound})</div><PairingCard pairing={pairing} teams={state.teams} round={state.currentRound} /></div>}
+                    <div className="card"><div className="card-title">Classificação</div>{[...state.teams].filter(t=>t.confirmed).sort((a,b)=>b.points-a.points).map((t, i) => <div key={t.id} className="standing-row" style={{opacity: t.id===teamId?1:0.6}}><div className="standing-rank">{i+1}</div><div className="standing-name" style={{color: t.id===teamId?'var(--teal)':'white'}}>{t.name} {t.id===teamId && '(Você)'}</div><div className="standing-pts">{t.points}</div></div>)}</div>
                 </div>
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function PairingCard({ pairing, teams, round, onReport, isAdmin }) {
+            const t1 = teams.find(t => t.id === pairing.t1);
+            const t2 = pairing.t2 === 'BYE' ? { name: 'BYE' } : teams.find(t => t.id === pairing.t2);
+            const isOdd = round % 2 === 1;
+            const res = pairing.results;
+            const Badge = ({ table, side }) => {
+                const val = side === 'T1' ? 'T1' : 'T2';
+                const active = res[table] === val;
+                return <div className={`result-badge ${active ? 'active' : ''}`} onClick={() => isAdmin && onReport({ ...res, [table]: val })}>{side === 'T1' ? t1.name : t2.name}</div>;
+            };
+            return (
+                <div className="pairing-card">
+                    <div className="pairing-match"><span>{t1.name}</span> <span className="pairing-vs">VS</span> <span>{t2.name}</span></div>
+                    {t2.name !== 'BYE' && (
+                        <div>
+                            <div className="result-group"><div className="result-label">Mesa Prioritária (3 pts): {isOdd ? 'Capitães' : 'Mates'}</div><div className="result-badges"><Badge table="p1" side="T1" /><Badge table="p1" side="T2" /></div></div>
+                            <div className="result-group"><div className="result-label">Mesa 2 (2 pts): {isOdd ? 'Mates' : 'Capitães'}</div><div className="result-badges"><Badge table="p2" side="T1" /><Badge table="p2" side="T2" /></div></div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
