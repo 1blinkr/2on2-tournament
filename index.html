@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2on2 Tournament - One Piece TCG</title>
+    <title>TCG 2on2 Tournament Manager</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -12,43 +12,267 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Crimson+Pro:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         :root {
-            --navy: #0a0e1a; --deep: #0d1426; --card: #111827; --border: #1e2d4a;
-            --gold: #c9a84c; --gold-light: #f0c96e; --teal: #1abc9c; --text: #e8dcc8;
-            --muted: #8a9bb5; --white: #f5f0e8;
+            --gold: #c9a84c;
+            --gold-light: #f0c96e;
+            --navy: #0a0e1a;
+            --deep: #0d1426;
+            --card: rgba(17, 24, 39, 0.9);
+            --border: #1e2d4a;
+            --teal: #1abc9c;
+            --text: #e8dcc8;
+            --muted: #8a9bb5;
+            --white: #f5f0e8;
+            --error: #ff7675;
+            --success: #1abc9c;
+
+            --red: #e74c3c;
+            --green: #2ecc71;
+            --blue: #3498db;
+            --purple: #9b59b6;
+            --black: #2c3e50;
+            --yellow: #f1c40f;
         }
-        body { background: var(--navy); color: var(--text); font-family: 'Crimson Pro', serif; min-height: 100vh; margin: 0; }
-        .app { max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
-        .header { background: linear-gradient(180deg, #0a0e1a 0%, #0d1426 100%); border-bottom: 2px solid var(--gold); padding: 20px; position: sticky; top: 0; z-index: 100; text-align: center; }
-        .logo { font-family: 'Pirata One', cursive; font-size: 28px; color: var(--gold); }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--navy);
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(201, 168, 76, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(26, 188, 156, 0.05) 0%, transparent 40%);
+            color: var(--text);
+            font-family: 'Crimson Pro', serif;
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app {
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            background: linear-gradient(to bottom, var(--deep), var(--navy));
+            border-bottom: 2px solid var(--gold);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Pirata One', cursive;
+            font-size: 32px;
+            color: var(--gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
         .logo span { color: var(--teal); }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .input, .select { width: 100%; background: var(--deep); border: 1px solid var(--border); border-radius: 8px; color: var(--white); padding: 12px; margin-bottom: 12px; font-size: 16px; outline: none; }
-        .input:focus, .select:focus { border-color: var(--gold); }
-        .btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-family: 'Space Mono', monospace; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 8px; }
+
+        .container {
+            flex: 1;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        .card-title {
+            font-family: 'Pirata One', cursive;
+            color: var(--gold);
+            font-size: 24px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
         .btn-gold { background: var(--gold); color: var(--navy); }
-        .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+        .btn-gold:active { transform: translateY(1px); }
+        .btn-gold:hover { background: var(--gold-light); box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3); }
+        .btn-gold:disabled { background: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
+
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-        .nav { display: flex; background: var(--deep); border-top: 1px solid var(--border); position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; z-index: 100; }
-        .nav-item { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: var(--muted); font-size: 12px; font-family: 'Space Mono', monospace; }
-        .nav-item.active { color: var(--gold); border-top: 2px solid var(--gold); background: rgba(201, 168, 76, 0.05); }
-        .standing-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-        .rank { font-family: 'Pirata One', cursive; font-size: 20px; color: var(--gold); width: 24px; }
+        .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+        .btn-danger { background: rgba(231, 76, 60, 0.2); color: #ff7675; border: 1px solid rgba(231, 76, 60, 0.4); }
+
+        .input, .select {
+            width: 100%;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--white);
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+        .input:focus, .select:focus { border-color: var(--gold); }
+
+        .label {
+            display: block;
+            margin-bottom: 6px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+
+        .standing-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .standing-item:last-child { border-bottom: none; }
+        .rank { font-family: 'Pirata One', cursive; font-size: 22px; color: var(--gold); width: 35px; }
         .team-info { flex: 1; }
-        .team-name { font-weight: 700; color: var(--white); }
-        .pts { font-family: 'Space Mono', monospace; color: var(--teal); font-weight: 700; }
-        .leaders-preview { display: flex; gap: 8px; margin-top: 4px; }
-        .leader-tag { font-size: 10px; background: var(--deep); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--muted); }
-        .alert { padding: 12px; border-radius: 8px; margin-bottom: 16px; text-align: center; font-size: 14px; }
-        .alert-error { background: rgba(192,57,43,0.2); border: 1px solid rgba(192,57,43,0.4); color: #ff7675; }
-        .alert-success { background: rgba(26,188,156,0.2); border: 1px solid rgba(26,188,156,0.4); color: var(--teal); }
-        .hidden-leaders { font-style: italic; color: var(--muted); font-size: 12px; }
+        .team-name { font-weight: 700; color: var(--white); font-size: 16px; }
+        .team-stats { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
+        .pts-badge { font-family: 'Space Mono', monospace; font-weight: 700; color: var(--teal); font-size: 16px; }
+
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            background: var(--deep);
+            border-top: 1px solid var(--gold);
+            z-index: 1000;
+        }
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px 5px;
+            cursor: pointer;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-item.active {
+            color: var(--gold);
+            background: rgba(201, 168, 76, 0.05);
+            border-top: 2px solid var(--gold);
+            padding-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .view-transition {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .alert { padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; }
+        .alert-error { background: rgba(231, 76, 60, 0.2); color: #ff7675; border: 1px solid rgba(231, 76, 60, 0.4); }
+        .alert-success { background: rgba(26, 188, 156, 0.2); color: var(--teal); border: 1px solid rgba(26, 188, 156, 0.4); }
+
+        .badge { font-size: 9px; padding: 2px 5px; border-radius: 4px; text-transform: uppercase; font-weight: bold; margin-left: 5px; }
+        .badge-priority { background: var(--gold); color: var(--navy); }
+
+        .pairing-row { display: flex; align-items: center; justify-content: space-between; margin: 15px 0; }
+        .pairing-team { flex: 1; text-align: center; }
+        .vs { font-family: 'Pirata One', cursive; font-size: 24px; color: var(--muted); padding: 0 10px; }
+
+        .result-toggle { display: flex; background: var(--deep); border-radius: 8px; overflow: hidden; margin-top: 5px; border: 1px solid var(--border); }
+        .result-option { flex: 1; padding: 8px; text-align: center; cursor: pointer; font-size: 12px; font-family: 'Space Mono', monospace; transition: 0.2s; }
+        .result-option.active.win { background: var(--teal); color: var(--navy); }
+        .result-option.active.loss { background: #e74c3c; color: var(--white); }
+
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .spinner { border: 4px solid rgba(201,168,76,0.1); border-left-color: var(--gold); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .leader-tag {
+            font-size: 10px;
+            background: var(--deep);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            color: var(--white);
+            margin-right: 4px;
+            font-family: 'Space Mono', monospace;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .color-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            display: inline-block;
+        }
+
+        .bg-red { background-color: var(--red); }
+        .bg-green { background-color: var(--green); }
+        .bg-blue { background-color: var(--blue); }
+        .bg-purple { background-color: var(--purple); }
+        .bg-black { background-color: var(--black); border: 1px solid var(--muted); }
+        .bg-yellow { background-color: var(--yellow); }
     </style>
 </head>
 <body>
     <div id="root"></div>
+
     <script type="text/babel">
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCV4BZlj4gu9WdF0amY7FTfVq065cAh3os",
             authDomain: "oneblinker-2on2.firebaseapp.com",
@@ -59,42 +283,192 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const { useState, useEffect } = React;
 
-        const LEADERS = [
-            "Monkey.D.Luffy (ST01)", "Roronoa Zoro (OP01)", "Trafalgar Law (OP01)", "Eustass.Kid (OP01)",
-            "Kaido (OP01)", "Crocodile (OP01)", "Edward.Newgate (OP02)", "Smoker (OP02)", "Kin'emon (OP02)",
-            "Portgas.D.Ace (OP03)", "Charlotte Katakuri (OP03)", "Rob Lucci (OP03)", "Arlong (OP03)",
-            "Rebecca (OP04)", "Donquixote Doflamingo (OP04)", "Issho (OP04)", "Monkey.D.Luffy (OP05)",
-            "Enel (OP05)", "Sabo (OP05)", "Sakazuki (OP05)", "Yamato (OP06)", "Gecko Moria (OP06)",
-            "Vinsmoke Reiju (OP06)", "Perona (OP06)", "Boa Hancock (OP07)", "Jewelry Bonney (OP07)",
-            "Monkey.D.Dragon (OP07)", "Rob Lucci (OP07)", "Marco (OP08)", "Silvers Rayleigh (OP08)",
-            "King (OP08)", "Pudding (OP08)"
-        ].sort();
+        // Constants
+        const LEADERS_DATA = [
+            { name: "Monkey.D.Luffy (ST01)", colors: ["Red"] },
+            { name: "Roronoa Zoro (OP01)", colors: ["Red"] },
+            { name: "Trafalgar Law (OP01)", colors: ["Red", "Green"] },
+            { name: "Eustass.Kid (OP01)", colors: ["Green"] },
+            { name: "Kaido (OP01)", colors: ["Blue", "Purple"] },
+            { name: "Crocodile (OP01)", colors: ["Blue", "Purple"] },
+            { name: "Edward.Newgate (OP02)", colors: ["Red"] },
+            { name: "Smoker (OP02)", colors: ["Black"] },
+            { name: "Kin'emon (OP02)", colors: ["Green"] },
+            { name: "Portgas.D.Ace (OP03)", colors: ["Red"] },
+            { name: "Charlotte Katakuri (OP03)", colors: ["Yellow"] },
+            { name: "Rob Lucci (OP03)", colors: ["Black"] },
+            { name: "Arlong (OP03)", colors: ["Green", "Yellow"] },
+            { name: "Rebecca (OP04)", colors: ["Blue", "Black"] },
+            { name: "Donquixote Doflamingo (OP04)", colors: ["Blue"] },
+            { name: "Issho (OP04)", colors: ["Green", "Black"] },
+            { name: "Monkey.D.Luffy (OP05)", colors: ["Purple"] },
+            { name: "Enel (OP05)", colors: ["Yellow"] },
+            { name: "Sabo (OP05)", colors: ["Red", "Black"] },
+            { name: "Sakazuki (OP05)", colors: ["Blue", "Black"] },
+            { name: "Yamato (OP06)", colors: ["Green", "Yellow"] },
+            { name: "Gecko Moria (OP06)", colors: ["Black"] },
+            { name: "Vinsmoke Reiju (OP06)", colors: ["Purple", "Blue"] },
+            { name: "Perona (OP06)", colors: ["Green", "Black"] },
+            { name: "Boa Hancock (OP07)", colors: ["Blue"] },
+            { name: "Jewelry Bonney (OP07)", colors: ["Green"] },
+            { name: "Monkey.D.Dragon (OP07)", colors: ["Red"] },
+            { name: "Rob Lucci (OP07)", colors: ["Black"] },
+            { name: "Marco (OP08)", colors: ["Red", "Blue"] },
+            { name: "Silvers Rayleigh (OP08)", colors: ["Red", "Blue"] },
+            { name: "King (OP08)", colors: ["Purple", "Black"] },
+            { name: "Pudding (OP08)", colors: ["Purple", "Yellow"] }
+        ].sort((a,b) => a.name.localeCompare(b.name));
+
+        const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+        // Helpers
+        const canUseTogether = (l1Name, l2Name) => {
+            const l1 = LEADERS_DATA.find(l => l.name === l1Name);
+            const l2 = LEADERS_DATA.find(l => l.name === l2Name);
+            if (!l1 || !l2) return true;
+            if (l1Name === l2Name) return false;
+            if (l1.colors.length === l2.colors.length) {
+                const same = l1.colors.every(c => l2.colors.includes(c)) && l2.colors.every(c => l1.colors.includes(c));
+                if (same) return false;
+            }
+            return true;
+        };
+
+        const shuffle = (array) => {
+            let m = array.length, t, i;
+            while (m) {
+                i = Math.floor(Math.random() * m--);
+                t = array[m]; array[m] = array[i]; array[i] = t;
+            }
+            return array;
+        };
 
         function App() {
             const [view, setView] = useState('standings');
             const [userTeam, setUserTeam] = useState(null);
             const [teams, setTeams] = useState([]);
-            const [config, setConfig] = useState({ tournamentStarted: false });
+            const [rounds, setRounds] = useState([]);
+            const [config, setConfig] = useState({ tournamentStarted: false, currentRound: 0, timerEnd: null });
             const [isAdmin, setIsAdmin] = useState(false);
+            const [loading, setLoading] = useState(true);
             const [error, setError] = useState('');
             const [success, setSuccess] = useState('');
+            const [timeLeft, setTimeLeft] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
+            const timerRef = useRef(null);
 
+            // Timer Logic
+            useEffect(() => {
+                if (!config.timerEnd) { setTimeLeft(null); return; }
+                const interval = setInterval(() => {
+                    const now = new Date().getTime();
+                    const diff = config.timerEnd - now;
+                    if (diff <= 0) {
+                        setTimeLeft('00:00');
+                        clearInterval(interval);
+                    } else {
+                        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                        setTimeLeft(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+                    }
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [config.timerEnd]);
+
+            // Auto-clear success/error messages
+            useEffect(() => {
+                if (error || success) {
+                    if (timerRef.current) clearTimeout(timerRef.current);
+                    timerRef.current = setTimeout(() => {
+                        setError(''); setSuccess('');
+                    }, 4000);
+                }
+            }, [error, success]);
+
+            // Listen to data
             useEffect(() => {
                 const unsubTeams = db.collection('teams').onSnapshot(snap => {
-                    setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => (b.pts || 0) - (a.pts || 0)));
+                    setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                    setLoading(false);
+                });
+                const unsubRounds = db.collection('rounds').onSnapshot(snap => {
+                    setRounds(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                 });
                 const unsubConfig = db.collection('config').doc('status').onSnapshot(doc => {
                     if (doc.exists) setConfig(doc.data());
                 });
-                
+
                 const saved = localStorage.getItem('tournament_team');
                 if (saved) setUserTeam(JSON.parse(saved));
 
-                return () => { unsubTeams(); unsubConfig(); };
+                return () => { unsubTeams(); unsubRounds(); unsubConfig(); };
             }, []);
 
+            // Calculate Standings
+            const LeaderTag = useCallback(({ name }) => {
+                const leader = LEADERS_DATA.find(l => l.name === name);
+                if (!leader) return <span className="leader-tag">{name}</span>;
+                return (
+                    <span className="leader-tag">
+                        {leader.colors.map(c => (
+                            <span key={c} className={`color-dot bg-${c.toLowerCase()}`}></span>
+                        ))}
+                        {name}
+                    </span>
+                );
+            }, []);
+
+            const standings = useMemo(() => {
+                const teamStats = {};
+                teams.forEach(t => {
+                    teamStats[t.id] = { ...t, points: 0, op_list: [], op_perc: 0, op2_perc: 0 };
+                });
+
+                rounds.forEach(round => {
+                    const isP1Priority = round.roundNumber % 2 !== 0;
+                    round.pairings.forEach(match => {
+                        if (match.t2 === 'BYE') {
+                            if (teamStats[match.t1]) teamStats[match.t1].points += 5;
+                            return;
+                        }
+                        const t1 = teamStats[match.t1];
+                        const t2 = teamStats[match.t2];
+                        if (t1 && t2 && match.results) {
+                            // T1 points
+                            if (match.results.p1_winner === match.t1) t1.points += (isP1Priority ? 3 : 2);
+                            if (match.results.p2_winner === match.t1) t1.points += (isP1Priority ? 2 : 3);
+                            t1.op_list.push(match.t2);
+                            // T2 points
+                            if (match.results.p1_winner === match.t2) t2.points += (isP1Priority ? 3 : 2);
+                            if (match.results.p2_winner === match.t2) t2.points += (isP1Priority ? 2 : 3);
+                            t2.op_list.push(match.t1);
+                        }
+                    });
+                });
+
+                Object.values(teamStats).forEach(t => {
+                    let oppPts = 0;
+                    t.op_list.forEach(id => oppPts += (teamStats[id]?.points || 0));
+                    t.op_perc = t.op_list.length > 0 ? oppPts / t.op_list.length : 0;
+                });
+
+                Object.values(teamStats).forEach(t => {
+                    let oppOP = 0;
+                    t.op_list.forEach(id => oppOP += (teamStats[id]?.op_perc || 0));
+                    t.op2_perc = t.op_list.length > 0 ? oppOP / t.op_list.length : 0;
+                });
+
+                return Object.values(teamStats).filter(t =>
+                    t.teamName.toLowerCase().includes(searchTerm.toLowerCase())
+                ).sort((a, b) => {
+                    if (b.points !== a.points) return b.points - a.points;
+                    if (b.op_perc !== a.op_perc) return b.op_perc - a.op_perc;
+                    return b.op2_perc - a.op2_perc;
+                });
+            }, [teams, rounds]);
+
+            // Handlers
             const handleRegister = async (e) => {
                 e.preventDefault();
                 setError(''); setSuccess('');
@@ -107,168 +481,370 @@
                 const password = data.get('password');
 
                 if (!teamName || !p1 || !p2 || !password) return setError('Preencha todos os campos.');
+                if (!canUseTogether(l1, l2)) return setError('Líderes não podem ter as mesmas cores.');
                 
                 try {
                     const existing = await db.collection('teams').doc(teamName).get();
                     if (existing.exists) return setError('Nome da dupla já existe.');
-
-                    const newTeam = { teamName, p1, l1, p2, l2, password, pts: 0, w: 0, l: 0, d: 0, registeredAt: new Date() };
+                    const newTeam = { teamName, p1, l1, p2, l2, password, registeredAt: new Date() };
                     await db.collection('teams').doc(teamName).set(newTeam);
-                    setUserTeam(newTeam);
-                    localStorage.setItem('tournament_team', JSON.stringify(newTeam));
-                    setSuccess('Registro concluído com sucesso!');
+                    setUserTeam({id: teamName, ...newTeam});
+                    localStorage.setItem('tournament_team', JSON.stringify({id: teamName, ...newTeam}));
+                    setSuccess('Registro concluído!');
                     setView('user');
-                } catch (err) { setError('Erro ao registrar: ' + err.message); }
+                } catch (err) { setError('Erro: ' + err.message); }
             };
 
             const handleLogin = async (e) => {
                 e.preventDefault();
-                setError(''); setSuccess('');
                 const data = new FormData(e.target);
-                const teamName = data.get('teamName').trim();
-                const password = data.get('password');
-
+                const name = data.get('teamName').trim();
+                const pass = data.get('password');
                 try {
-                    const doc = await db.collection('teams').doc(teamName).get();
-                    if (doc.exists && doc.data().password === password) {
+                    const doc = await db.collection('teams').doc(name).get();
+                    if (doc.exists && doc.data().password === pass) {
                         const team = { id: doc.id, ...doc.data() };
                         setUserTeam(team);
                         localStorage.setItem('tournament_team', JSON.stringify(team));
-                        setSuccess('Login realizado!');
                         setView('user');
-                    } else { setError('Nome ou senha incorretos.'); }
-                } catch (err) { setError('Erro ao logar.'); }
+                    } else setError('Credenciais inválidas.');
+                } catch (err) { setError('Erro ao entrar.'); }
             };
 
-            const handleAdminLogin = (e) => {
-                e.preventDefault();
-                setError('');
-                const pass = new FormData(e.target).get('adminPass');
-                if (pass === 'Betinho') {
-                    setIsAdmin(true);
-                    setSuccess('Acesso admin concedido.');
-                } else {
-                    setError('Senha incorreta.');
+            const generateNextRound = async () => {
+                setLoading(true);
+                const nextNum = config.currentRound + 1;
+                const sorted = [...standings];
+
+                // Get all previous pairings to avoid rematches
+                const prevPairings = new Set();
+                rounds.forEach(r => {
+                    r.pairings.forEach(p => {
+                        if (p.t2 !== 'BYE') {
+                            prevPairings.add(`${p.t1}_${p.t2}`);
+                            prevPairings.add(`${p.t2}_${p.t1}`);
+                        }
+                    });
+                });
+
+                if (nextNum === 1) shuffle(sorted);
+
+                const pairings = [];
+                const paired = new Set();
+
+                for (let i = 0; i < sorted.length; i++) {
+                    if (paired.has(sorted[i].id)) continue;
+
+                    let matchIdx = -1;
+                    // Try to find an opponent that hasn't played against this team yet
+                    for (let j = i + 1; j < sorted.length; j++) {
+                        if (paired.has(sorted[j].id)) continue;
+                        if (!prevPairings.has(`${sorted[i].id}_${sorted[j].id}`)) {
+                            matchIdx = j;
+                            break;
+                        }
+                    }
+
+                    // Fallback if everyone already played each other (rare)
+                    if (matchIdx === -1) {
+                        for (let j = i + 1; j < sorted.length; j++) {
+                            if (!paired.has(sorted[j].id)) {
+                                matchIdx = j;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (matchIdx !== -1) {
+                        pairings.push({ t1: sorted[i].id, t2: sorted[matchIdx].id, results: null });
+                        paired.add(sorted[i].id); paired.add(sorted[matchIdx].id);
+                    } else {
+                        pairings.push({ t1: sorted[i].id, t2: 'BYE', results: null });
+                        paired.add(sorted[i].id);
+                    }
                 }
+
+                await db.collection('rounds').doc(`round_${nextNum}`).set({
+                    roundNumber: nextNum,
+                    pairings,
+                    createdAt: new Date()
+                });
+                // Set timer for 40 minutes (official round time)
+                const timerEnd = new Date().getTime() + (40 * 60 * 1000);
+                await db.collection('config').doc('status').update({
+                    currentRound: nextNum,
+                    tournamentStarted: true,
+                    timerEnd
+                });
+                setLoading(false);
             };
 
-            const toggleTournament = async () => {
-                const newState = !config.tournamentStarted;
-                await db.collection('config').doc('status').set({ tournamentStarted: newState });
+            const reportResult = async (roundId, matchIdx, p1_winner, p2_winner) => {
+                const roundDoc = await db.collection('rounds').doc(roundId).get();
+                const data = roundDoc.data();
+                // Ensure we don't send undefined to Firebase
+                data.pairings[matchIdx].results = {
+                    p1_winner: p1_winner || data.pairings[matchIdx].results?.p1_winner || null,
+                    p2_winner: p2_winner || data.pairings[matchIdx].results?.p2_winner || null
+                };
+                await db.collection('rounds').doc(roundId).update({ pairings: data.pairings });
+                setSuccess('Resultado enviado!');
             };
+
+            const resetTournament = async () => {
+                if (!confirm('Tem certeza? Isso apagará todas as rodadas!')) return;
+                setLoading(true);
+                const roundsSnap = await db.collection('rounds').get();
+                const batch = db.batch();
+                roundsSnap.forEach(doc => batch.delete(doc.ref));
+                batch.update(db.collection('config').doc('status'), {
+                    currentRound: 0,
+                    tournamentStarted: false,
+                    timerEnd: null
+                });
+                await batch.commit();
+                setLoading(false);
+            };
+
+            // Current Match for User
+            const currentMatch = useMemo(() => {
+                if (!userTeam || config.currentRound === 0) return null;
+                const round = rounds.find(r => r.roundNumber === config.currentRound);
+                if (!round) return null;
+                const matchIdx = round.pairings.findIndex(p => p.t1 === userTeam.id || p.t2 === userTeam.id);
+                return matchIdx !== -1 ? { ...round.pairings[matchIdx], matchIdx, roundId: round.id, roundNumber: round.roundNumber } : null;
+            }, [userTeam, rounds, config.currentRound]);
 
             return (
                 <div className="app">
+                    {loading && <div className="loading-overlay"><div className="spinner"></div></div>}
                     <header className="header">
                         <h1 className="logo">TCG <span>2on2</span></h1>
+                        {timeLeft && (
+                            <div style={{
+                                position:'absolute',
+                                right:'15px',
+                                top:'25px',
+                                fontFamily:'Space Mono',
+                                color: timeLeft === '00:00' ? 'var(--error)' : 'var(--teal)',
+                                fontSize:'14px',
+                                fontWeight:'bold',
+                                border:'1px solid',
+                                padding:'2px 8px',
+                                borderRadius:'4px'
+                            }}>
+                                ⏱ {timeLeft}
+                            </div>
+                        )}
                     </header>
 
-                    {error && <div className="alert alert-error">{error}</div>}
-                    {success && <div className="alert alert-success">{success}</div>}
+                    <div className="container">
+                        <div style={{position:'fixed', top:'80px', left:'20px', right:'20px', zIndex:1000}}>
+                            {error && <div className="alert alert-error" style={{boxShadow:'0 4px 12px rgba(0,0,0,0.5)'}}>{error}</div>}
+                            {success && <div className="alert alert-success" style={{boxShadow:'0 4px 12px rgba(0,0,0,0.5)'}}>{success}</div>}
+                        </div>
 
-                    {view === 'standings' && (
-                        <div className="card">
-                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Classificação</h2>
-                            {teams.map((t, i) => (
-                                <div key={t.id} className="standing-row">
-                                    <div className="rank">#{i + 1}</div>
-                                    <div className="team-info">
-                                        <div className="team-name">{t.teamName}</div>
-                                        {config.tournamentStarted ? (
-                                            <div className="leaders-preview">
-                                                <span className="leader-tag">{t.l1}</span>
-                                                <span className="leader-tag">{t.l2}</span>
+                        <div className="view-transition" key={view}>
+                        {view === 'standings' && (
+                            <div className="card">
+                                <div className="card-title">Classificação {config.currentRound > 0 && <span>Rodada {config.currentRound}</span>}</div>
+                                {standings.map((t, i) => (
+                                    <div key={t.id} className="standing-item">
+                                        <div className="rank">#{i + 1}</div>
+                                        <div className="team-info">
+                                            <div className="team-name">{t.teamName}</div>
+                                            <div className="team-leaders" style={{marginTop:'4px'}}>
+                                                {config.tournamentStarted ? (
+                                                    <><LeaderTag name={t.l1} /><LeaderTag name={t.l2} /></>
+                                                ) : <span style={{fontStyle:'italic', fontSize:'11px', color:'var(--muted)'}}>Líderes Ocultos</span>}
                                             </div>
-                                        ) : <div className="hidden-leaders">Líderes ocultos até o início</div>}
+                                        </div>
+                                        <div className="pts-badge">{t.points} <small style={{fontSize:'8px'}}>PTS</small></div>
                                     </div>
-                                    <div className="pts">{t.pts || 0} PTS</div>
-                                </div>
-                            ))}
-                            {teams.length === 0 && <p style={{textAlign: 'center', color: 'var(--muted)'}}>Nenhuma dupla inscrita.</p>}
-                        </div>
-                    )}
-
-                    {view === 'register' && (
-                        <div className="card">
-                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Cadastro da Dupla</h2>
-                            <form onSubmit={handleRegister}>
-                                <input name="teamName" className="input" placeholder="Nome da Dupla" required />
-                                <div style={{display: 'flex', gap: '8px'}}>
-                                    <input name="p1" className="input" placeholder="Jogador 1" required />
-                                    <select name="l1" className="select">{LEADERS.map(l => <option key={l} value={l}>{l}</option>)}</select>
-                                </div>
-                                <div style={{display: 'flex', gap: '8px'}}>
-                                    <input name="p2" className="input" placeholder="Jogador 2" required />
-                                    <select name="l2" className="select">{LEADERS.map(l => <option key={l} value={l}>{l}</option>)}</select>
-                                </div>
-                                <input name="password" type="password" className="input" placeholder="Senha da Conta" required />
-                                <button type="submit" className="btn btn-gold">Criar Dupla</button>
-                            </form>
-                            <p style={{marginTop: '16px', textAlign: 'center', fontSize: '14px'}}>Já tem uma conta? <span onClick={() => setView('login')} style={{color: 'var(--gold)', cursor: 'pointer'}}>Entrar</span></p>
-                        </div>
-                    )}
-
-                    {view === 'login' && (
-                        <div className="card">
-                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Acessar Torneio</h2>
-                            <form onSubmit={handleLogin}>
-                                <input name="teamName" className="input" placeholder="Nome da Dupla" required />
-                                <input name="password" type="password" className="input" placeholder="Senha" required />
-                                <button type="submit" className="btn btn-gold">Entrar</button>
-                            </form>
-                            <p style={{marginTop: '16px', textAlign: 'center', fontSize: '14px'}}>Não tem cadastro? <span onClick={() => setView('register')} style={{color: 'var(--gold)', cursor: 'pointer'}}>Registrar</span></p>
-                        </div>
-                    )}
-
-                    {view === 'user' && userTeam && (
-                        <div className="card">
-                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)'}}>{userTeam.teamName}</h2>
-                            <p style={{color: 'var(--muted)', marginBottom: '16px'}}>Painel do Jogador</p>
-                            <div className="standing-row">
-                                <div className="team-info">
-                                    <div className="team-name">{userTeam.p1}</div>
-                                    <div className="leader-tag">{userTeam.l1}</div>
-                                </div>
-                                <div className="pts" style={{color: 'var(--muted)'}}>VS</div>
-                                <div className="team-info" style={{textAlign: 'right'}}>
-                                    <div className="team-name">{userTeam.p2}</div>
-                                    <div className="leader-tag">{userTeam.l2}</div>
-                                </div>
+                                ))}
+                                {teams.length === 0 && <p style={{textAlign:'center', color:'var(--muted)'}}>Nenhum time inscrito.</p>}
                             </div>
-                            <div style={{marginTop: '20px', display: 'flex', justifyContent: 'space-between'}}>
-                                <div><span style={{color: 'var(--muted)'}}>Pontos:</span> <span className="pts">{userTeam.pts || 0}</span></div>
-                                <button onClick={() => {localStorage.removeItem('tournament_team'); setUserTeam(null); setView('login');}} className="btn btn-outline" style={{padding: '8px 12px', width: 'auto'}}>Sair</button>
-                            </div>
-                        </div>
-                    )}
+                        )}
 
-                    {view === 'admin' && (
-                        <div className="card">
-                            <h2 style={{fontFamily: 'Pirata One', color: 'var(--gold)', marginBottom: '16px'}}>Painel de Admin</h2>
-                            {!isAdmin ? (
-                                <form onSubmit={handleAdminLogin}>
-                                    <input name="adminPass" type="password" className="input" placeholder="Senha Admin" required />
-                                    <button type="submit" className="btn btn-gold">Entrar</button>
+                        {view === 'register' && (
+                            <div className="card">
+                                <div className="card-title">Nova Dupla</div>
+                                <form onSubmit={handleRegister}>
+                                    <label className="label">Nome da Dupla</label>
+                                    <input name="teamName" className="input" placeholder="Ex: Piratas do Chapéu de Palha" required />
+
+                                    <div style={{display:'flex', gap:'10px'}}>
+                                        <div style={{flex:1}}>
+                                            <label className="label">Jogador 1</label>
+                                            <input name="p1" className="input" placeholder="Nome" required />
+                                            <select name="l1" className="select">{LEADERS_DATA.map(l => <option key={l.name} value={l.name}>{l.name}</option>)}</select>
+                                        </div>
+                                        <div style={{flex:1}}>
+                                            <label className="label">Jogador 2</label>
+                                            <input name="p2" className="input" placeholder="Nome" required />
+                                            <select name="l2" className="select">{LEADERS_DATA.map(l => <option key={l.name} value={l.name}>{l.name}</option>)}</select>
+                                        </div>
+                                    </div>
+
+                                    <label className="label">Senha da Conta</label>
+                                    <input name="password" type="password" className="input" placeholder="****" required />
+                                    <button type="submit" className="btn btn-gold">Criar Dupla</button>
+                                    <button type="button" onClick={() => setView('login')} className="btn btn-outline">Já tenho conta</button>
                                 </form>
-                            ) : (
-                                <div>
-                                    <button onClick={toggleTournament} className="btn btn-gold">
-                                        {config.tournamentStarted ? 'Parar Torneio (Ocultar Líderes)' : 'Iniciar Torneio (Revelar Líderes)'}
-                                    </button>
-                                    <p style={{marginTop: '12px', fontSize: '12px', color: 'var(--muted)'}}>Logado como admin.</p>
+                            </div>
+                        )}
+
+                        {view === 'login' && (
+                            <div className="card">
+                                <div className="card-title">Entrar</div>
+                                <form onSubmit={handleLogin}>
+                                    <label className="label">Nome da Dupla</label>
+                                    <input name="teamName" className="input" required />
+                                    <label className="label">Senha</label>
+                                    <input name="password" type="password" className="input" required />
+                                    <button type="submit" className="btn btn-gold">Acessar</button>
+                                    <button type="button" onClick={() => setView('register')} className="btn btn-outline">Criar nova dupla</button>
+                                </form>
+                            </div>
+                        )}
+
+                        {view === 'user' && userTeam && (
+                            <>
+                                <div className="card">
+                                    <div className="card-title">
+                                        {userTeam.teamName}
+                                        <button onClick={() => {localStorage.removeItem('tournament_team'); setUserTeam(null); setView('login');}} className="btn btn-outline" style={{width:'auto', padding:'4px 8px', fontSize:'10px', marginTop:0}}>Sair</button>
+                                    </div>
+                                    <div className="standing-item">
+                                        <div className="team-info">
+                                            <div className="team-name">{userTeam.p1}</div>
+                                            <LeaderTag name={userTeam.l1} />
+                                        </div>
+                                        <div style={{padding:'0 15px', color:'var(--gold)', fontFamily:'Pirata One', fontSize:'20px'}}>X</div>
+                                        <div className="team-info">
+                                            <div className="team-name">{userTeam.p2}</div>
+                                            <LeaderTag name={userTeam.l2} />
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
+
+                                {currentMatch ? (
+                                    <div className="card pairing-card">
+                                        <div className="card-title">Confronto Atual <span className="badge badge-priority">Rodada {currentMatch.roundNumber}</span></div>
+                                        {currentMatch.t2 === 'BYE' ? (
+                                            <div style={{textAlign:'center', padding:'20px'}}>
+                                                <div style={{fontSize:'24px', color:'var(--teal)'}}>Você recebeu um BYE!</div>
+                                                <div style={{color:'var(--muted)'}}>Aproveite o descanso, você ganha 5 pontos nesta rodada.</div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="pairing-row">
+                                                    <div className="pairing-team">
+                                                        <div className="team-name">{userTeam.id === currentMatch.t1 ? 'Sua Dupla' : (teams.find(t=>t.id===currentMatch.t1)?.teamName)}</div>
+                                                    </div>
+                                                    <div className="vs">VS</div>
+                                                    <div className="pairing-team">
+                                                        <div className="team-name">{userTeam.id === currentMatch.t2 ? 'Sua Dupla' : (teams.find(t=>t.id===currentMatch.t2)?.teamName)}</div>
+                                                    </div>
+                                                </div>
+
+                                                <div style={{marginTop:'20px'}}>
+                                                    <div style={{background:'rgba(201,168,76,0.1)', padding:'10px', borderRadius:'8px', border:'1px solid var(--gold)', marginBottom:'15px'}}>
+                                                        <div style={{fontSize:'12px', fontWeight:'bold', color:'var(--gold)', textAlign:'center'}}>Mesa de Prioridade (Vale 3 Pontos)</div>
+                                                        <div style={{fontSize:'11px', color:'var(--muted)', textAlign:'center', marginBottom:'8px'}}>
+                                                            {currentMatch.roundNumber % 2 !== 0 ? 'Player 1 vs Player 1' : 'Player 2 vs Player 2'}
+                                                        </div>
+                                                        <div className="result-toggle">
+                                                            <div onClick={() => reportResult(currentMatch.roundId, currentMatch.matchIdx, currentMatch.t1, currentMatch.results?.p2_winner)} className={`result-option win ${currentMatch.results?.p1_winner === currentMatch.t1 ? 'active' : ''}`}>
+                                                                {teams.find(t=>t.id===currentMatch.t1)?.teamName}
+                                                            </div>
+                                                            <div onClick={() => reportResult(currentMatch.roundId, currentMatch.matchIdx, currentMatch.t2, currentMatch.results?.p2_winner)} className={`result-option win ${currentMatch.results?.p1_winner === currentMatch.t2 ? 'active' : ''}`}>
+                                                                {teams.find(t=>t.id===currentMatch.t2)?.teamName}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{padding:'10px', borderRadius:'8px', border:'1px solid var(--border)'}}>
+                                                        <div style={{fontSize:'12px', fontWeight:'bold', color:'var(--muted)', textAlign:'center'}}>Mesa Secundária (Vale 2 Pontos)</div>
+                                                        <div style={{fontSize:'11px', color:'var(--muted)', textAlign:'center', marginBottom:'8px'}}>
+                                                            {currentMatch.roundNumber % 2 !== 0 ? 'Player 2 vs Player 2' : 'Player 1 vs Player 1'}
+                                                        </div>
+                                                        <div className="result-toggle">
+                                                            <div onClick={() => reportResult(currentMatch.roundId, currentMatch.matchIdx, currentMatch.results?.p1_winner, currentMatch.t1)} className={`result-option win ${currentMatch.results?.p2_winner === currentMatch.t1 ? 'active' : ''}`}>
+                                                                {teams.find(t=>t.id===currentMatch.t1)?.teamName}
+                                                            </div>
+                                                            <div onClick={() => reportResult(currentMatch.roundId, currentMatch.matchIdx, currentMatch.results?.p1_winner, currentMatch.t2)} className={`result-option win ${currentMatch.results?.p2_winner === currentMatch.t2 ? 'active' : ''}`}>
+                                                                {teams.find(t=>t.id===currentMatch.t2)?.teamName}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <p style={{fontSize:'10px', color:'var(--muted)', marginTop:'15px', textAlign:'center', fontStyle:'italic'}}>
+                                                        * Clique no nome da dupla que venceu em cada mesa.
+                                                    </p>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="card" style={{textAlign:'center', color:'var(--muted)'}}>
+                                        Aguardando início da próxima rodada...
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {view === 'admin' && (
+                            <div className="card">
+                                <div className="card-title">Painel do Juiz</div>
+                                {!isAdmin ? (
+                                    <form onSubmit={(e) => {e.preventDefault(); if(new FormData(e.target).get('pass') === 'Betinho') setIsAdmin(true); else setError('Senha incorreta');}}>
+                                        <input name="pass" type="password" className="input" placeholder="Senha Admin" required />
+                                        <button className="btn btn-gold">Entrar</button>
+                                    </form>
+                                ) : (
+                                    <div>
+                                        <div style={{marginBottom:'20px'}}>
+                                            <label className="label">Status do Torneio</label>
+                                            <p>{config.tournamentStarted ? `Em andamento - Rodada ${config.currentRound}` : 'Não iniciado'}</p>
+                                        </div>
+                                        <button onClick={generateNextRound} className="btn btn-gold" disabled={loading}>
+                                            {config.currentRound === 0 ? 'Iniciar Torneio (Rodada 1)' : 'Gerar Próxima Rodada'}
+                                        </button>
+                                        <button onClick={resetTournament} className="btn btn-danger" style={{marginTop:'20px'}}>Resetar Torneio</button>
+
+                                        <div style={{marginTop:'30px'}}>
+                                            <label className="label">Duplas Inscritas ({teams.length})</label>
+                                            {teams.map(t => (
+                                                <div key={t.id} style={{fontSize:'12px', padding:'5px 0', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between'}}>
+                                                    <span>{t.teamName}</span>
+                                                    <span style={{color:'var(--muted)'}}>{t.p1} & {t.p2}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         </div>
-                    )}
+                    </div>
 
                     <nav className="nav">
-                        <div className={`nav-item ${view === 'standings' ? 'active' : ''}`} onClick={() => setView('standings')}>STANDINGS</div>
-                        {!userTeam ? (
-                            <div className={`nav-item ${view === 'login' || view === 'register' ? 'active' : ''}`} onClick={() => setView('login')}>CONTA</div>
+                        <div className={`nav-item ${view === 'standings' ? 'active' : ''}`} onClick={() => setView('standings')}>
+                            <span>🏆</span> STANDINGS
+                        </div>
+                        {userTeam ? (
+                            <div className={`nav-item ${view === 'user' ? 'active' : ''}`} onClick={() => setView('user')}>
+                                <span>🏴‍☠️</span> MEU TIME
+                            </div>
                         ) : (
-                            <div className={`nav-item ${view === 'user' ? 'active' : ''}`} onClick={() => setView('user')}>MEU TIME</div>
+                            <div className={`nav-item ${view === 'login' || view === 'register' ? 'active' : ''}`} onClick={() => setView('login')}>
+                                <span>🔑</span> ENTRAR
+                            </div>
                         )}
-                        <div className={`nav-item ${view === 'admin' ? 'active' : ''}`} onClick={() => setView('admin')}>ADMIN</div>
+                        <div className={`nav-item ${view === 'admin' ? 'active' : ''}`} onClick={() => setView('admin')}>
+                            <span>⚓</span> ADMIN
+                        </div>
                     </nav>
                 </div>
             );
